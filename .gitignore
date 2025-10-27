@@ -1,0 +1,12 @@
+﻿echo "bin/
+obj/
+*.user
+*.suo
+*.db
+*.log
+.vscode/
+*.DS_Store" > .gitignore
+
+git add .gitignore
+git commit -m "Agrega .gitignore para excluir bin y obj"
+git push origin main
