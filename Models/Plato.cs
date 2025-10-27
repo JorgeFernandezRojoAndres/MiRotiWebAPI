@@ -11,9 +11,9 @@ namespace MiRoti.Models
         public int Id { get; set; }
 
         [Required, MaxLength(100)]
-        public string Nombre { get; set; }
+        public string Nombre { get; set; } = string.Empty;
 
-        public string Descripcion { get; set; }
+        public string Descripcion { get; set; } = string.Empty;
 
         [Column(TypeName = "decimal(10,2)")]
         public decimal PrecioVenta { get; set; }
@@ -22,5 +22,7 @@ namespace MiRoti.Models
         public decimal CostoTotal { get; set; }
 
         public bool Disponible { get; set; } = true;
+        public ICollection<PlatoIngrediente> PlatoIngredientes { get; set; } = new List<PlatoIngrediente>();
+
     }
 }

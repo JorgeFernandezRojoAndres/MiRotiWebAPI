@@ -1,0 +1,14 @@
+{
+  "Controllers": {
+    "ControllersApi": {
+      "AuthApiController.cs": "",
+      "CadetesApiController.cs": "",
+      "ClientesApiController.cs": "",
+      "PedidosApiController.cs": "",
+      "PlatosApiController.cs": ""
+    },
+    "HomeController.cs": "",
+    "PedidosController.cs": "",
+    "PlatosController.cs": ""
+  }
+}

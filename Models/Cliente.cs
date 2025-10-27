@@ -8,11 +8,11 @@ namespace MiRoti.Models
     public class Cliente : Usuario
     {
         [Required, MaxLength(200)]
-        public string Direccion { get; set; }
+        public string? Direccion { get; set; }
 
         [Required, MaxLength(20)]
-        public string Telefono { get; set; }
+        public string? Telefono { get; set; }
 
-        public ICollection<Pedido> Pedidos { get; set; }
+        public ICollection<Pedido>? Pedidos { get; set; }
     }
 }

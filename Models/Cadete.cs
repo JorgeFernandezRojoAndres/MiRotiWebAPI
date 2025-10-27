@@ -8,8 +8,8 @@ namespace MiRoti.Models
     public class Cadete : Usuario
     {
         [MaxLength(50)]
-        public string MedioTransporte { get; set; }
+        public string? MedioTransporte { get; set; }
 
-        public ICollection<Pedido> Pedidos { get; set; }
+        public ICollection<Pedido>? Pedidos { get; set; }
     }
 }

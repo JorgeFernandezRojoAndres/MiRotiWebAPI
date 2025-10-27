@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.EntityFrameworkCore; 
+using MiRoti.Data;                   
 
 namespace MiRoti
 {
@@ -9,6 +11,14 @@ namespace MiRoti
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            // 🔹 Conexión a MySQL (usa la cadena del appsettings.json)
+            builder.Services.AddDbContext<MiRotiContext>(options =>
+                options.UseMySql(
+                    builder.Configuration.GetConnectionString("DefaultConnection"),
+                    new MySqlServerVersion(new Version(10, 4, 32)) 
+                )
+            );
 
             // 🔹 Agregar servicios al contenedor
             builder.Services.AddControllers();
