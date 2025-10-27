@@ -18,6 +18,8 @@ namespace MiRoti.Data
         public DbSet<DetallePedido> DetallesPedido { get; set; }
         public DbSet<Plato> Platos { get; set; }
         public DbSet<Ingrediente> Ingredientes { get; set; }
+        public DbSet<UnidadMedida> UnidadesMedida { get; set; }          // 🆕
+        public DbSet<PlatoIngrediente> PlatosIngredientes { get; set; }  // 🆕
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -42,6 +44,29 @@ namespace MiRoti.Data
                 .HasOne(d => d.Plato)
                 .WithMany()
                 .HasForeignKey(d => d.PlatoId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ✅ Relación N:N entre Plato e Ingrediente (tabla intermedia)
+            modelBuilder.Entity<PlatoIngrediente>()
+                .HasKey(pi => new { pi.PlatoId, pi.IngredienteId }); // clave compuesta
+
+            modelBuilder.Entity<PlatoIngrediente>()
+                .HasOne(pi => pi.Plato)
+                .WithMany(p => p.PlatoIngredientes)
+                .HasForeignKey(pi => pi.PlatoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PlatoIngrediente>()
+                .HasOne(pi => pi.Ingrediente)
+                .WithMany(i => i.PlatoIngredientes)
+                .HasForeignKey(pi => pi.IngredienteId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ✅ Relación UnidadMedida ↔ Ingrediente
+            modelBuilder.Entity<Ingrediente>()
+                .HasOne(i => i.UnidadMedida)
+                .WithMany(u => u.Ingredientes)
+                .HasForeignKey(i => i.UnidadMedidaId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Índices y restricciones
