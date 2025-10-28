@@ -54,7 +54,7 @@ namespace MiRoti.Controllers
                     return RedirectToAction("Index", "Analisis");
 
                 case "Cocinero":
-                    return RedirectToAction("Index", "Pedidos");
+                    return RedirectToAction("Index", "Platos"); // 🔹 cambiado aquí
 
                 case "Cadete":
                 case "Cliente":

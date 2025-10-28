@@ -1,138 +1,165 @@
-@model IEnumerable<MiRoti.Models.Pedido>
+@model IEnumerable<MiRoti.Models.Plato>
 
 @{
-    ViewData["Title"] = "Seguimiento de Pedidos";
-
-    var pendientes = Model.Count(p => p.Estado == "Pendiente");
-    var enPreparacion = Model.Count(p => p.Estado == "En Preparación");
-    var enCamino = Model.Count(p => p.Estado == "En Camino");
-    var completados = Model.Count(p => p.Estado == "Completado");
+     Context.Session.SetString("UsuarioRol", "Cocinero");
+    
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Gestión de Platos";
+     var rol = Context.Session.GetString("UsuarioRol") ?? "Invitado";
+    var activos = Model.Count(p => p.Disponible);
+    var inactivos = Model.Count(p => !p.Disponible);
+    var margenPromedio = Model.Any()
+        ? Model.Average(p => (double)((p.PrecioVenta - p.CostoTotal) / p.PrecioVenta) * 100)
+        : 0;
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold">Seguimiento de Pedidos</h2>
+<div class="container-fluid px-4 mt-4">
+    <!-- 🔹 Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+        <h2 class="fw-bold text-dark">
+            <i class="bi bi-egg-fried me-2 text-warning"></i> Gestión de Platos
+        </h2>
+        <a asp-action="Create" class="btn btn-warning fw-semibold text-white shadow-sm">
+            <i class="bi bi-plus-lg"></i> Agregar Plato Nuevo
+        </a>
     </div>
-    <p class="text-muted">Monitorear pedidos en tiempo real</p>
+    <p class="text-muted">Crear, editar y gestionar el menú disponible para los clientes</p>
 
-    <!-- Métricas -->
+    <!-- 🔹 Tarjetas de métricas -->
     <div class="row mb-4 g-3">
         <div class="col-md-3">
-            <div class="card shadow-sm border-0 p-3">
+            <div class="card border-0 shadow-sm p-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="mb-1 fw-semibold">Pendientes</p>
-                        <h4>@pendientes</h4>
+                        <p class="mb-1 fw-semibold text-secondary">Platos Activos</p>
+                        <h4 class="fw-bold">@activos</h4>
                     </div>
-                    <i class="bi bi-hourglass-split fs-3 text-warning"></i>
+                    <i class="bi bi-eye fs-3 text-success"></i>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card shadow-sm border-0 p-3">
+            <div class="card border-0 shadow-sm p-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="mb-1 fw-semibold">En Preparación</p>
-                        <h4>@enPreparacion</h4>
+                        <p class="mb-1 fw-semibold text-secondary">Platos Inactivos</p>
+                        <h4 class="fw-bold">@inactivos</h4>
                     </div>
-                    <i class="bi bi-fire fs-3 text-danger"></i>
+                    <i class="bi bi-eye-slash fs-3 text-muted"></i>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card shadow-sm border-0 p-3">
+            <div class="card border-0 shadow-sm p-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="mb-1 fw-semibold">En Camino</p>
-                        <h4>@enCamino</h4>
+                        <p class="mb-1 fw-semibold text-secondary">Margen Promedio</p>
+                        <h4 class="fw-bold">@margenPromedio.ToString("0.0")%</h4>
                     </div>
-                    <i class="bi bi-truck fs-3 text-primary"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0 p-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <p class="mb-1 fw-semibold">Completados Hoy</p>
-                        <h4 class="text-success">@completados</h4>
-                    </div>
-                    <i class="bi bi-check-circle fs-3 text-success"></i>
+                    <i class="bi bi-cash-coin fs-3 text-warning"></i>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Tabla de pedidos -->
+    <!-- 🔹 Tabla de platos -->
     <div class="card border-0 shadow-sm">
         <div class="card-body">
             @if (!Model.Any())
             {
                 <div class="text-center p-5 text-muted">
-                    <i class="bi bi-egg-fried fs-1 mb-3"></i>
-                    <h5>No hay pedidos activos</h5>
-                    <p>Los pedidos aparecerán aquí en tiempo real</p>
+                    <i class="bi bi-box fs-1 mb-3"></i>
+                    <h5>No hay platos agregados aún</h5>
+                    <p>Haz clic en <strong>"Agregar Plato Nuevo"</strong> para comenzar</p>
                 </div>
             }
             else
             {
-                <table class="table align-middle table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th>ID Pedido</th>
-                            <th>Cliente</th>
-                            <th>Artículos</th>
-                            <th>Total</th>
-                            <th>Estado</th>
-                            <th>Cadete</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var pedido in Model)
-                        {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
                             <tr>
-                                <td>@pedido.Id</td>
-                                <td>@pedido.Cliente?.Nombre</td>
-                                <td>@pedido.Detalles?.Count()</td>
-                                <td>@pedido.Total.ToString("C0")</td>
-                                <td>
-                                    @switch (pedido.Estado)
-                                    {
-                                        case "Pendiente":
-                                            <span class="badge bg-warning text-dark">Pendiente</span>;
-                                            break;
-                                        case "En Preparación":
-                                            <span class="badge bg-danger">En Preparación</span>;
-                                            break;
-                                        case "En Camino":
-                                            <span class="badge bg-primary">En Camino</span>;
-                                            break;
-                                        case "Completado":
-                                            <span class="badge bg-success">Completado</span>;
-                                            break;
-                                        default:
-                                            <span class="badge bg-secondary">@pedido.Estado</span>;
-                                            break;
-                                    }
-                                </td>
-                                <td>@pedido.Cadete?.Nombre</td>
-                                <td>
-                                    <a asp-action="Details" asp-route-id="@pedido.Id" class="btn btn-sm btn-outline-secondary me-1">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    <a asp-action="Edit" asp-route-id="@pedido.Id" class="btn btn-sm btn-outline-primary me-1">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <a asp-action="Delete" asp-route-id="@pedido.Id" class="btn btn-sm btn-outline-danger">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
-                                </td>
+                                <th>Plato</th>
+                                <th>Costo</th>
+                                <th>Precio</th>
+                                <th>Ganancia</th>
+                                <th>Margen</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Model)
+                            {
+                                var ganancia = p.PrecioVenta - p.CostoTotal;
+                                var margen = p.PrecioVenta > 0 ? (ganancia / p.PrecioVenta) * 100 : 0;
+
+                                <tr>
+                                    <td class="d-flex align-items-center">
+                                        @if (!string.IsNullOrEmpty(p.ImagenUrl))
+                                        {
+                                            <img src="@p.ImagenUrl.Replace("/images/images", "/images")"
+                                                 alt="@p.Nombre"
+                                                 class="rounded me-2 shadow-sm"
+                                                 style="width: 50px; height: 50px; object-fit: cover; border: 1px solid #ddd;" />
+                                        }
+                                        else
+                                        {
+                                            <div class="d-flex align-items-center justify-content-center bg-light rounded me-2"
+                                                 style="width: 50px; height: 50px; border: 1px solid #ddd;">
+                                                <i class="bi bi-image text-muted"></i>
+                                            </div>
+                                        }
+                                        <span class="fw-semibold">@p.Nombre</span>
+                                    </td>
+                                    <td>@p.CostoTotal.ToString("C0")</td>
+                                    <td>@p.PrecioVenta.ToString("C0")</td>
+                                    <td>@ganancia.ToString("C0")</td>
+                                    <td>@margen.ToString("0.0")%</td>
+                                    <td>
+                                        @if (p.Disponible)
+                                        {
+                                            <span class="badge bg-success">Activo</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Inactivo</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary me-1">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-outline-secondary me-1">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-action="Delete" asp-route-id="@p.Id" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             }
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        console.log("🧩 Layout cargado:", "@Layout");
+        console.log("🧩 Bootstrap CSS:", document.querySelector('link[href*=\"bootstrap\"]')?.href);
+        console.log("🧩 Bootstrap JS:", typeof bootstrap !== "undefined" ? "OK ✅" : "NO ❌");
+        console.log("🧩 Iconos:", document.querySelector('link[href*=\"bootstrap-icons\"]')?.href);
+        console.log("🧩 Navbar existe:", document.querySelector('.navbar') ? "✅ Sí" : "❌ No");
+
+        window.addEventListener("load", () => {
+            console.log("✅ DOM completamente cargado");
+            const navbar = document.querySelector('.navbar');
+            if (!navbar) console.warn("⚠️ El layout no se está aplicando o el navbar no existe.");
+        });
+    </script>
+}
+    

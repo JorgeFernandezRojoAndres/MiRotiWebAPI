@@ -24,7 +24,7 @@ namespace MiRoti.Data
             context.UnidadesMedida.AddRange(unidades);
             context.SaveChanges();
 
-            // Usuarios base
+            // 🔹 Usuarios base
             var admin = new Usuario
             {
                 Nombre = "Administrador",
@@ -34,7 +34,18 @@ namespace MiRoti.Data
             };
             context.Usuarios.Add(admin);
 
-            // Clientes de ejemplo
+            // 🔹 Cocinero base
+            var cocinero = new Cocinero
+            {
+                Nombre = "Chef Admin",
+                Email = "chef@miroti.com",
+                Contrasenia = "123456",
+                Rol = "Cocinero",
+                Especialidad = "Comidas Caseras"
+            };
+            context.Cocineros.Add(cocinero);
+
+            // 🔹 Clientes de ejemplo
             var cliente1 = new Cliente
             {
                 Nombre = "Juan Pérez",
@@ -55,7 +66,7 @@ namespace MiRoti.Data
             };
             context.Clientes.AddRange(cliente1, cliente2);
 
-            // Cadete
+            // 🔹 Cadete base
             var cadete = new Cadete
             {
                 Nombre = "Pedro López",
@@ -68,7 +79,7 @@ namespace MiRoti.Data
 
             context.SaveChanges();
 
-            // Ingredientes base (vinculados a unidades)
+            // 🔹 Ingredientes base (vinculados a unidades)
             var ingredientes = new[]
             {
                 new Ingrediente { Nombre = "Papa", CostoUnitario = 150, UnidadMedidaId = unidades[1].Id },
@@ -78,7 +89,7 @@ namespace MiRoti.Data
             };
             context.Ingredientes.AddRange(ingredientes);
 
-            // Platos base
+            // 🔹 Platos base
             var platos = new[]
             {
                 new Plato { Nombre = "Milanesa con Papas", Descripcion = "Clásica", PrecioVenta = 3000, CostoTotal = 2000, Disponible = true },

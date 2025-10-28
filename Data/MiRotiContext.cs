@@ -14,6 +14,7 @@ namespace MiRoti.Data
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Cliente> Clientes { get; set; }
         public DbSet<Cadete> Cadetes { get; set; }
+        public DbSet<Cocinero> Cocineros { get; set; } 
         public DbSet<Pedido> Pedidos { get; set; }
         public DbSet<DetallePedido> DetallesPedido { get; set; }
         public DbSet<Plato> Platos { get; set; }
@@ -28,9 +29,10 @@ namespace MiRoti.Data
             // 🧩 Herencia (TPH) — todas las subclases en la tabla Usuario
             modelBuilder.Entity<Usuario>()
                 .HasDiscriminator<string>("TipoUsuario")
-                .HasValue<Usuario>("Usuario")   // 🔹 Valor que está en tu tabla (coincide con la BD)
+                .HasValue<Usuario>("Usuario")
                 .HasValue<Cliente>("Cliente")
-                .HasValue<Cadete>("Cadete");
+                .HasValue<Cadete>("Cadete")
+                .HasValue<Cocinero>("Cocinero"); // ✅ agregado
 
             // 🧩 Pedido ↔ DetallePedido
             modelBuilder.Entity<DetallePedido>()

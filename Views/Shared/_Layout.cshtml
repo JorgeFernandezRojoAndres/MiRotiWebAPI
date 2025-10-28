@@ -1,10 +1,12 @@
-@{  
+@{
     var title = ViewData["Title"] ?? "Panel de Administración";
     var rol = Context.Session.GetString("UsuarioRol") ?? "Invitado";
+
 }
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -22,26 +24,32 @@
             background-color: #faf8f6;
             font-family: 'Segoe UI', sans-serif;
         }
+
         .navbar {
             background-color: #fff;
             border-bottom: 1px solid #eee;
         }
+
         .navbar-brand {
             font-weight: 600;
             color: #5c3d2e;
         }
+
         .nav-link.active {
             color: #f57c00 !important;
             border-bottom: 2px solid #f57c00;
         }
+
         .nav-link {
             color: #555;
             font-weight: 500;
             transition: color 0.2s;
         }
+
         .nav-link:hover {
             color: #f57c00;
         }
+
         footer {
             margin-top: 50px;
             padding: 15px 0;
@@ -52,7 +60,12 @@
         }
     </style>
 </head>
+
 <body>
+    <script>
+        console.log("🧠 Rol actual en sesión:", "@rol");
+    </script>
+
     <!-- 🔹 Barra de navegación superior -->
     <nav class="navbar navbar-expand-lg shadow-sm">
         <div class="container">
@@ -71,36 +84,38 @@
                     {
                         <li class="nav-item">
                             <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Platos" ? "active" : "")"
-                               asp-controller="Platos" asp-action="Index">
+                                asp-controller="Platos" asp-action="Index">
                                 <i class="bi bi-egg-fried me-1"></i> Platos
                             </a>
                         </li>
 
                         <li class="nav-item">
                             <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Pedidos" ? "active" : "")"
-                               asp-controller="Pedidos" asp-action="Index">
+                                asp-controller="Pedidos" asp-action="Index">
                                 <i class="bi bi-receipt-cutoff me-1"></i> Pedidos
                             </a>
                         </li>
 
                         <li class="nav-item">
                             <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Analisis" ? "active" : "")"
-                               asp-controller="Analisis" asp-action="Index">
+                                asp-controller="Analisis" asp-action="Index">
                                 <i class="bi bi-bar-chart-line-fill me-1"></i> Análisis
                             </a>
                         </li>
                     }
 
-                    @* 🔸 Si es COCINERO: solo ve pedidos *@
-                    else if (rol == "Cocinero")
+
+                    else if (rol.Equals("Cocinero", StringComparison.OrdinalIgnoreCase) || rol.Equals("Chef",
+                    StringComparison.OrdinalIgnoreCase))
                     {
                         <li class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Pedidos" ? "active" : "")"
-                               asp-controller="Pedidos" asp-action="Index">
-                                <i class="bi bi-receipt-cutoff me-1"></i> Pedidos
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Platos" ? "active" : "")"
+                                asp-controller="Platos" asp-action="Index">
+                                <i class="bi bi-egg-fried me-1"></i> Platos
                             </a>
                         </li>
                     }
+
 
                     @* 🔸 Botón de cerrar sesión visible para ambos *@
                     @if (rol == "Admin" || rol == "Cocinero")
@@ -128,4 +143,5 @@
 
     @RenderSection("Scripts", required: false)
 </body>
+
 </html>
