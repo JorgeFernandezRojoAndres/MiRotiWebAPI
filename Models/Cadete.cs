@@ -4,12 +4,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MiRoti.Models
 {
-    [Table("Cadete")]
+    // ❌ Quitamos [Table("Cadete")] para mantener herencia TPH (tabla Usuario)
     public class Cadete : Usuario
     {
         [MaxLength(50)]
         public string? MedioTransporte { get; set; }
 
-        public ICollection<Pedido>? Pedidos { get; set; }
+        public ICollection<Pedido> Pedidos { get; set; } = new List<Pedido>();
     }
 }

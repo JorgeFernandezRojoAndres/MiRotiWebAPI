@@ -1,0 +1,188 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@model dynamic
+@using MiRoti.Data
+
+@{
+    ViewData["Title"] = "Análisis de Ventas";
+
+    var totalVentas = (decimal?)ViewData["TotalVentas"] ?? 0;
+    var gananciaTotal = (decimal?)ViewData["GananciaTotal"] ?? 0;
+    var platoMasVendido = (string?)ViewData["PlatoMasVendido"] ?? "Sin datos";
+    var totalPedidos = (int?)ViewData["TotalPedidos"] ?? 0;
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">📊 Análisis de Ventas</h2>
+    </div>
+    <p class="text-muted">Resumen general de desempeño de platos y pedidos</p>
+
+    <!-- 🔹 Métricas principales -->
+    <div class="row mb-4 g-3">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 fw-semibold">Total Ventas</p>
+                        <h4 class="fw-bold text-success">@totalVentas.ToString("C0")</h4>
+                    </div>
+                    <i class="bi bi-cash-stack fs-3 text-success"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 fw-semibold">Ganancia Neta</p>
+                        <h4 class="fw-bold text-primary">@gananciaTotal.ToString("C0")</h4>
+                    </div>
+                    <i class="bi bi-graph-up-arrow fs-3 text-primary"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 fw-semibold">Pedidos Totales</p>
+                        <h4 class="fw-bold text-warning">@totalPedidos</h4>
+                    </div>
+                    <i class="bi bi-receipt fs-3 text-warning"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 fw-semibold">Plato Más Vendido</p>
+                        <h5 class="fw-bold text-danger">@platoMasVendido</h5>
+                    </div>
+                    <i class="bi bi-trophy fs-3 text-danger"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔹 Tabla de ganancias -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <h5 class="fw-semibold mb-3">📈 Ganancias por Plato</h5>
+
+            @if (ViewData["Reporte"] is IEnumerable<object> reporte && reporte.Any())
+            {
+                <table class="table align-middle table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Plato</th>
+                            <th>Precio Venta</th>
+                            <th>Costo Total</th>
+                            <th>Ganancia</th>
+                            <th>Margen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in reporte)
+                        {
+                            var nombre = item.GetType().GetProperty("Plato")?.GetValue(item, null);
+                            var venta = item.GetType().GetProperty("PrecioVenta")?.GetValue(item, null);
+                            var costo = item.GetType().GetProperty("CostoTotal")?.GetValue(item, null);
+                            var ganancia = item.GetType().GetProperty("Ganancia")?.GetValue(item, null);
+                            var margen = 0m;
+
+                            if (venta is decimal v && costo is decimal c)
+                            {
+                                margen = v > 0 ? ((v - c) / v) * 100 : 0;
+                            }
+
+                            <tr>
+                                <td>@nombre</td>
+                                <td>@string.Format("{0:C0}", venta)</td>
+                                <td>@string.Format("{0:C0}", costo)</td>
+                                <td>@string.Format("{0:C0}", ganancia)</td>
+                                <td>@margen.ToString("0.0")%</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <!-- 🔹 Gráfico de dona -->
+                <div class="card border-0 shadow-sm mt-4">
+                    <div class="card-body text-center">
+                        <h5 class="fw-semibold mb-3">📊 Distribución de Ganancias por Plato</h5>
+                        <div class="d-flex justify-content-center">
+                            <div style="width: 500px; height: 300px;">
+                                <canvas id="chartGanancias"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center p-5 text-muted">
+                    <i class="bi bi-clipboard-data fs-1 mb-3"></i>
+                    <h5>No hay datos para mostrar</h5>
+                    <p>Los reportes se generarán automáticamente cuando existan ventas registradas</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const ctx = document.getElementById("chartGanancias");
+            const reporte = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewData["Reporte"] ?? new object[0]));
+
+            if (!Array.isArray(reporte) || reporte.length === 0) return;
+
+            const labels = reporte.map(item => item.Plato || "Sin nombre");
+            const data = reporte.map(item => item.Ganancia || 0);
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: ['#ff6f61', '#4caf50', '#2196f3', '#ffb300', '#9c27b0'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { font: { size: 14 } }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+
+    <style>
+        #chartGanancias {
+            max-width: 500px;
+            max-height: 300px;
+            margin: 0 auto;
+            display: block;
+        }
+        .card canvas {
+            padding: 10px;
+        }
+        .card-body h5 {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+    </style>
+}

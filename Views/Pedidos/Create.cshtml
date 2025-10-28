@@ -1,0 +1,157 @@
+@model MiRoti.Models.Pedido
+@{
+    ViewData["Title"] = "Nuevo Pedido";
+    var clientes = ViewData["Clientes"] as List<MiRoti.Models.Cliente>;
+    var cadetes = ViewData["Cadetes"] as List<MiRoti.Models.Cadete>;
+    var platos = ViewData["Platos"] as List<MiRoti.Models.Plato>;
+}
+
+<div class="container mt-4">
+    <h2 class="fw-bold mb-4"><i class="bi bi-plus-circle me-2"></i>Nuevo Pedido</h2>
+
+    <form asp-action="Create" method="post">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label asp-for="ClienteId" class="form-label fw-semibold">Cliente</label>
+                <select asp-for="ClienteId" class="form-select" required>
+                    <option value="">-- Seleccionar Cliente --</option>
+                    @foreach (var c in clientes!)
+                    {
+                        <option value="@c.Id">@c.Nombre</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="CadeteId" class="form-label fw-semibold">Cadete</label>
+                <select asp-for="CadeteId" class="form-select">
+                    <option value="">-- Sin asignar --</option>
+                    @foreach (var cad in cadetes!)
+                    {
+                        <option value="@cad.Id">@cad.Nombre</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Estado" class="form-label fw-semibold">Estado</label>
+            <select asp-for="Estado" class="form-select" required>
+                <option>Pendiente</option>
+                <option>En Preparación</option>
+                <option>En Camino</option>
+                <option>Completado</option>
+            </select>
+        </div>
+
+        <!-- Sección de detalles -->
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-header bg-light fw-semibold">
+                <i class="bi bi-list-ul me-2"></i> Agregar Platos
+            </div>
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-6">
+                        <label class="form-label">Plato</label>
+                        <select id="platoSelect" class="form-select">
+                            <option value="">-- Seleccionar plato --</option>
+                            @foreach (var p in platos!)
+                            {
+                                <option value="@p.Id" data-precio="@p.PrecioVenta">@p.Nombre (@p.PrecioVenta.ToString("C"))
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Cantidad</label>
+                        <input type="number" id="cantidadInput" class="form-control" min="1" value="1" />
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <button type="button" id="agregarBtn" class="btn btn-primary w-100">
+                            <i class="bi bi-plus-lg"></i> Agregar
+                        </button>
+                    </div>
+                </div>
+
+                <hr />
+
+                <table class="table table-sm align-middle mt-3" id="tablaDetalles">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Plato</th>
+                            <th>Cantidad</th>
+                            <th>Precio Unitario</th>
+                            <th>Subtotal</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaDetallesBody">
+                        @foreach (var detalle in Model.Detalles ?? new List<MiRoti.Models.DetallePedido>())
+                        {
+                            <partial name="_DetallePedidoRow" model="detalle" />
+
+                        }
+                    </tbody>
+
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-end fw-bold">Total</td>
+                            <td id="totalCell" class="fw-bold">$0</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex justify-content-between">
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+            <button type="submit" class="btn btn-success px-4">
+                <i class="bi bi-save"></i> Guardar Pedido
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        const tabla = document.querySelector("#tablaDetallesBody");
+
+        const totalCell = document.getElementById("totalCell");
+        const agregarBtn = document.getElementById("agregarBtn");
+        let total = 0;
+
+        agregarBtn.addEventListener("click", () => {
+            const select = document.getElementById("platoSelect");
+            const cantidad = parseInt(document.getElementById("cantidadInput").value);
+            const precio = parseFloat(select.selectedOptions[0].dataset.precio);
+            const nombre = select.selectedOptions[0].text;
+            const platoId = select.value;
+
+            if (!platoId) return;
+
+            const subtotal = cantidad * precio;
+            total += subtotal;
+
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                    <td>${nombre}<input type="hidden" name="Detalles[][PlatoId]" value="${platoId}" /></td>
+                    <td>${cantidad}<input type="hidden" name="Detalles[][Cantidad]" value="${cantidad}" /></td>
+                    <td>${precio.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</td>
+                    <td>${subtotal.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}<input type="hidden" name="Detalles[][Subtotal]" value="${subtotal}" /></td>
+                    <td><button type="button" class="btn btn-sm btn-outline-danger eliminar"><i class="bi bi-x-lg"></i></button></td>
+                `;
+
+            tabla.appendChild(row);
+            totalCell.textContent = total.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
+
+            row.querySelector(".eliminar").addEventListener("click", () => {
+                total -= subtotal;
+                row.remove();
+                totalCell.textContent = total.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
+            });
+        });
+    </script>
+}

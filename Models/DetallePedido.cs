@@ -11,11 +11,11 @@ namespace MiRoti.Models
 
         public int PedidoId { get; set; }
         [ForeignKey(nameof(PedidoId))]
-        public Pedido Pedido { get; set; }
+        public required Pedido Pedido { get; set; }
 
         public int PlatoId { get; set; }
         [ForeignKey(nameof(PlatoId))]
-        public Plato Plato { get; set; }
+        public required Plato Plato { get; set; }
 
         public int Cantidad { get; set; }
 

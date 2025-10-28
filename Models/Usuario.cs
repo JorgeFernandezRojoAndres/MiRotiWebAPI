@@ -10,15 +10,15 @@ namespace MiRoti.Models
         public int Id { get; set; }
 
         [Required, MaxLength(100)]
-        public string Nombre { get; set; }
+        public required string Nombre { get; set; }
 
         [Required, MaxLength(100)]
-        public string Email { get; set; }
+        public required string Email { get; set; }
 
         [Required, MaxLength(100)]
-        public string Contrasenia { get; set; }
+        public required string Contrasenia { get; set; }
 
         [Required, MaxLength(50)]
-        public string Rol { get; set; }
+        public required string Rol { get; set; }
     }
 }

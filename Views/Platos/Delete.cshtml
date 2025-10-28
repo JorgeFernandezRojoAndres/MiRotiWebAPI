@@ -1,0 +1,61 @@
+@model MiRoti.Models.Plato
+@{
+    ViewData["Title"] = "Eliminar Plato";
+}
+
+<div class="container mt-5">
+    <div class="card shadow-sm border-0">
+        <div class="card-body text-center">
+            <h3 class="fw-bold text-danger mb-3">
+                <i class="bi bi-trash3-fill me-2"></i> Eliminar Plato
+            </h3>
+            <p class="text-muted">¿Estás seguro de que deseas eliminar este plato?</p>
+
+            <hr />
+
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    @if (!string.IsNullOrEmpty(Model.ImagenUrl))
+                    {
+                        <img src="@Model.ImagenUrl" alt="@Model.Nombre"
+                             class="img-fluid rounded shadow-sm mb-3"
+                             style="max-height: 250px; object-fit: cover;" />
+                    }
+                    else
+                    {
+                        <div class="text-muted fst-italic mb-3">
+                            <i class="bi bi-image me-1"></i> Sin imagen disponible
+                        </div>
+                    }
+
+                    <h4 class="fw-semibold">@Model.Nombre</h4>
+                    <p class="text-muted">@Model.Descripcion</p>
+
+                    <p class="mb-1"><strong>Precio:</strong> @Model.PrecioVenta.ToString("C0")</p>
+                    <p class="mb-1"><strong>Costo:</strong> @Model.CostoTotal.ToString("C0")</p>
+                    <p><strong>Estado:</strong>
+                        @if (Model.Disponible)
+                        {
+                            <span class="badge bg-success">Disponible</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Inactivo</span>
+                        }
+                    </p>
+                </div>
+            </div>
+
+            <form asp-action="DeleteConfirmed" method="post" class="mt-4">
+                <input type="hidden" asp-for="Id" />
+
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash3"></i> Confirmar Eliminación
+                </button>
+                <a asp-action="Index" class="btn btn-secondary ms-2">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </a>
+            </form>
+        </div>
+    </div>
+</div>

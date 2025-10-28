@@ -1,0 +1,98 @@
+@model MiRoti.Models.Plato 
+@{
+    ViewData["Title"] = "Editar Plato";
+}
+
+<div class="container mt-4">
+    <h2 class="fw-bold mb-4">Editar Plato</h2>
+
+    <form asp-action="Edit" enctype="multipart/form-data">
+        <input type="hidden" asp-for="Id" />
+
+        <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <input asp-for="Nombre" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Descripción</label>
+            <textarea asp-for="Descripcion" class="form-control"></textarea>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Precio Venta</label>
+                <input asp-for="PrecioVenta" class="form-control" type="number" step="0.01" />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Costo Total</label>
+                <input asp-for="CostoTotal" class="form-control" type="number" step="0.01" />
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Disponible</label>
+            <select asp-for="Disponible" class="form-select">
+                <option value="true">Sí</option>
+                <option value="false">No</option>
+            </select>
+        </div>
+
+        <!-- 🔹 Imagen actual -->
+        <div class="mb-3">
+            <label class="form-label">Imagen actual</label>
+            @if (!string.IsNullOrEmpty(Model.ImagenUrl))
+            {
+                <div class="mb-2">
+                    <img id="imagenActual" src="@Model.ImagenUrl" alt="@Model.Nombre"
+                         style="width:140px; height:140px; object-fit:cover; border-radius:8px; border:1px solid #ddd;" />
+                </div>
+            }
+            else
+            {
+                <p class="text-muted fst-italic">No hay imagen cargada</p>
+            }
+        </div>
+
+        <!-- 🔹 Subir nueva imagen -->
+        <div class="mb-3">
+            <label class="form-label">Cambiar Imagen (opcional)</label>
+            <input type="file" name="imagen" class="form-control" accept="image/*" id="inputImagen" />
+        </div>
+
+        <!-- 🔹 Vista previa de nueva imagen -->
+        <div class="mb-3 text-center">
+            <img id="previewImagen" src="#" alt="Vista previa" 
+                 class="img-fluid rounded shadow-sm d-none" 
+                 style="max-height: 250px; object-fit: cover;" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Guardar Cambios
+        </button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Cancelar</a>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        // ✅ Vista previa dinámica de nueva imagen
+        const input = document.getElementById('inputImagen');
+        const preview = document.getElementById('previewImagen');
+
+        input.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    preview.src = event.target.result;
+                    preview.classList.remove('d-none');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.src = '#';
+                preview.classList.add('d-none');
+            }
+        });
+    </script>
+}

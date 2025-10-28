@@ -1,0 +1,140 @@
+@model IEnumerable<MiRoti.Models.Plato>
+
+@{
+    ViewData["Title"] = "Gestión de Platos";
+    var activos = Model.Count(p => p.Disponible);
+    var inactivos = Model.Count(p => !p.Disponible);
+    var margenPromedio = Model.Any() ? Model.Average(p => (double)((p.PrecioVenta - p.CostoTotal) / p.PrecioVenta) * 100) : 0;
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Gestión de Platos</h2>
+        <a asp-action="Create" class="btn btn-warning fw-semibold text-white">
+            <i class="bi bi-plus-lg"></i> Agregar Plato Nuevo
+        </a>
+    </div>
+    <p class="text-muted">Crear, editar y gestionar el menú</p>
+
+    <!-- 🔹 Métricas -->
+    <div class="row mb-4 g-3">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 fw-semibold">Platos Activos</p>
+                        <h4>@activos</h4>
+                    </div>
+                    <i class="bi bi-eye fs-3 text-success"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 fw-semibold">Platos Inactivos</p>
+                        <h4>@inactivos</h4>
+                    </div>
+                    <i class="bi bi-eye-slash fs-3 text-secondary"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 fw-semibold">Margen Promedio</p>
+                        <h4>@margenPromedio.ToString("0.0")%</h4>
+                    </div>
+                    <i class="bi bi-cash-coin fs-3 text-warning"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔹 Tabla de Platos -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            @if (!Model.Any())
+            {
+                <div class="text-center p-5 text-muted">
+                    <i class="bi bi-box fs-1 mb-3"></i>
+                    <h5>No hay platos agregados aún</h5>
+                    <p>Haz clic en <strong>"Agregar Plato Nuevo"</strong> para comenzar</p>
+                </div>
+            }
+            else
+            {
+                <table class="table align-middle table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Plato</th>
+                            <th>Costo</th>
+                            <th>Precio</th>
+                            <th>Ganancia</th>
+                            <th>Margen</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in Model)
+                        {
+                            var ganancia = p.PrecioVenta - p.CostoTotal;
+                            var margen = p.PrecioVenta > 0 ? (ganancia / p.PrecioVenta) * 100 : 0;
+
+                            <tr>
+                                <!-- 🔹 Foto + nombre -->
+                                <td class="d-flex align-items-center">
+                                    @if (!string.IsNullOrEmpty(p.ImagenUrl))
+                                    {
+                                        <img src="@p.ImagenUrl" alt="@p.Nombre"
+                                             class="rounded me-2"
+                                             style="width: 50px; height: 50px; object-fit: cover; border: 1px solid #ddd;" />
+                                    }
+                                    else
+                                    {
+                                        <div class="d-flex align-items-center justify-content-center bg-light rounded me-2"
+                                             style="width: 50px; height: 50px; border: 1px solid #ddd;">
+                                            <i class="bi bi-image text-muted"></i>
+                                        </div>
+                                    }
+                                    <span class="fw-semibold">@p.Nombre</span>
+                                </td>
+
+                                <td>@p.CostoTotal.ToString("C0")</td>
+                                <td>@p.PrecioVenta.ToString("C0")</td>
+                                <td>@ganancia.ToString("C0")</td>
+                                <td>@margen.ToString("0.0")%</td>
+
+                                <td>
+                                    @if (p.Disponible)
+                                    {
+                                        <span class="badge bg-success">Activo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Inactivo</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary me-1">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-outline-secondary me-1">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@p.Id" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>

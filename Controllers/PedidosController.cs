@@ -14,14 +14,18 @@ namespace MiRoti.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index()
-        {
-            var pedidos = await _context.Pedidos
-                .Include(p => p.Cliente)
-                .Include(p => p.Detalles)
-                .ToListAsync();
+       public async Task<IActionResult> Index()
+{
+    var pedidos = await _context.Pedidos
+        .Include(p => p.Cliente)
+        .Include(p => p.Cadete)
+        .Include(p => p.Detalles)
+            .ThenInclude(d => d.Plato)
+        .OrderByDescending(p => p.FechaHora)
+        .ToListAsync();
 
-            return View(pedidos);
-        }
+    return View(pedidos);
+}
+
     }
 }

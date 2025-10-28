@@ -14,7 +14,7 @@ namespace MiRoti.Models
         public DateTime FechaHora { get; set; }
 
         [Required, MaxLength(50)]
-        public string Estado { get; set; }
+        public required string Estado { get; set; }
 
         [Column(TypeName = "decimal(10,2)")]
         public decimal Total { get; set; }
@@ -22,12 +22,12 @@ namespace MiRoti.Models
         // Relaciones
         public int ClienteId { get; set; }
         [ForeignKey(nameof(ClienteId))]
-        public Cliente Cliente { get; set; }
+        public required Cliente Cliente { get; set; }
 
         public int? CadeteId { get; set; }
         [ForeignKey(nameof(CadeteId))]
-        public Cadete Cadete { get; set; }
+        public Cadete? Cadete { get; set; }  // puede ser null si aún no se asignó
 
-        public ICollection<DetallePedido> Detalles { get; set; }
+        public List<DetallePedido> Detalles { get; set; } = new();
     }
 }

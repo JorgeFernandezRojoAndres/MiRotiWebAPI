@@ -1,0 +1,85 @@
+@{
+    ViewData["Title"] = "Inicio";
+    var totalPlatos = (int?)ViewData["TotalPlatos"] ?? 0;
+    var totalPedidos = (int?)ViewData["TotalPedidos"] ?? 0;
+    var ventasTotales = (decimal?)ViewData["VentasTotales"] ?? 0;
+    var clientesActivos = (int?)ViewData["ClientesActivos"] ?? 0;
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Panel General</h2>
+        <a asp-controller="Analisis" asp-action="Index" class="btn btn-warning text-white">
+            <i class="bi bi-graph-up"></i> Ver análisis
+        </a>
+    </div>
+
+    <p class="text-muted">Resumen general de la actividad del sistema</p>
+
+    <!-- 🔹 Cards principales -->
+    <div class="row g-3">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 fw-semibold">Platos registrados</p>
+                        <h4>@totalPlatos</h4>
+                    </div>
+                    <i class="bi bi-egg-fried fs-3 text-warning"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 fw-semibold">Pedidos realizados</p>
+                        <h4>@totalPedidos</h4>
+                    </div>
+                    <i class="bi bi-receipt fs-3 text-success"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 fw-semibold">Ventas Totales</p>
+                        <h4>@ventasTotales.ToString("C0")</h4>
+                    </div>
+                    <i class="bi bi-cash-coin fs-3 text-primary"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 fw-semibold">Clientes Activos</p>
+                        <h4>@clientesActivos</h4>
+                    </div>
+                    <i class="bi bi-people fs-3 text-danger"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔹 Enlaces rápidos -->
+    <div class="mt-5">
+        <h5 class="fw-semibold mb-3">Accesos rápidos</h5>
+        <div class="d-flex flex-wrap gap-3">
+            <a asp-controller="Platos" asp-action="Index" class="btn btn-outline-warning">
+                <i class="bi bi-egg-fried me-1"></i> Gestionar Platos
+            </a>
+            <a asp-controller="Pedidos" asp-action="Index" class="btn btn-outline-success">
+                <i class="bi bi-receipt me-1"></i> Ver Pedidos
+            </a>
+            <a asp-controller="Analisis" asp-action="Index" class="btn btn-outline-primary">
+                <i class="bi bi-graph-up-arrow me-1"></i> Análisis de Ventas
+            </a>
+        </div>
+    </div>
+</div>

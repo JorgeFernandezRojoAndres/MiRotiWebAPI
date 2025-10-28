@@ -1,0 +1,99 @@
+@model MiRoti.Models.Pedido
+@{
+    ViewData["Title"] = "Editar Pedido";
+    var clientes = ViewData["Clientes"] as List<MiRoti.Models.Cliente>;
+    var cadetes = ViewData["Cadetes"] as List<MiRoti.Models.Cadete>;
+}
+
+<div class="container mt-4">
+    <h2 class="fw-bold mb-4"><i class="bi bi-pencil-square me-2"></i>Editar Pedido #@Model.Id</h2>
+
+    <form asp-action="Edit" method="post">
+        <input type="hidden" asp-for="Id" />
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label asp-for="ClienteId" class="form-label fw-semibold">Cliente</label>
+                <select asp-for="ClienteId" class="form-select">
+                    @foreach (var c in clientes!)
+                    {
+                        <option value="@c.Id" selected="@(Model.ClienteId == c.Id)">
+                            @c.Nombre
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="CadeteId" class="form-label fw-semibold">Cadete</label>
+                <select asp-for="CadeteId" class="form-select">
+                    <option value="">-- Sin asignar --</option>
+                    @foreach (var cad in cadetes!)
+                    {
+                        <option value="@cad.Id" selected="@(Model.CadeteId == cad.Id)">
+                            @cad.Nombre
+                        </option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Estado" class="form-label fw-semibold">Estado</label>
+            <select asp-for="Estado" class="form-select">
+                <option> Pendiente </option>
+                <option> En Preparación </option>
+                <option> En Camino </option>
+                <option> Completado </option>
+            </select>
+        </div>
+
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-header bg-light fw-semibold">
+                Detalles del Pedido
+            </div>
+            <div class="card-body">
+                @if (Model.Detalles != null && Model.Detalles.Any())
+                {
+                    <table class="table table-sm align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Plato</th>
+                                <th>Cantidad</th>
+                                <th>Precio Unitario</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var d in Model.Detalles)
+                            {
+                                <tr>
+                                    <td>@d.Plato?.Nombre</td>
+                                    <td>@d.Cantidad</td>
+                                    <td>@d.Plato?.PrecioVenta.ToString("C")</td>
+                                    <td>@d.Subtotal.ToString("C")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <div class="text-end fw-bold me-3">
+                        Total: @Model.Total.ToString("C")
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted fst-italic">No hay detalles registrados.</p>
+                }
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex justify-content-between">
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+            <button type="submit" class="btn btn-primary px-4">
+                <i class="bi bi-save"></i> Guardar Cambios
+            </button>
+        </div>
+    </form>
+</div>

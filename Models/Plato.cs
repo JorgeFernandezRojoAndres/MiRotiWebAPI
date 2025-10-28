@@ -22,7 +22,12 @@ namespace MiRoti.Models
         public decimal CostoTotal { get; set; }
 
         public bool Disponible { get; set; } = true;
-        public ICollection<PlatoIngrediente> PlatoIngredientes { get; set; } = new List<PlatoIngrediente>();
 
+        // 🔹 Nueva propiedad para almacenar la URL o ruta de la imagen
+        [MaxLength(255)]
+        public string? ImagenUrl { get; set; }
+
+        // 🔹 Relación muchos a muchos con ingredientes
+        public ICollection<PlatoIngrediente> PlatoIngredientes { get; set; } = new List<PlatoIngrediente>();
     }
 }

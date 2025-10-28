@@ -1,0 +1,25 @@
+@model MiRoti.Models.DetallePedido
+
+<tr>
+    <td>
+        @Model.Plato?.Nombre
+        <input type="hidden" name="Detalles.Index" value="@Model.PlatoId" />
+        <input type="hidden" name="Detalles[@Model.PlatoId].PlatoId" value="@Model.PlatoId" />
+    </td>
+    <td>
+        @Model.Cantidad
+        <input type="hidden" name="Detalles[@Model.PlatoId].Cantidad" value="@Model.Cantidad" />
+    </td>
+    <td>
+        @Model.Plato?.PrecioVenta.ToString("C")
+    </td>
+    <td>
+        @Model.Subtotal.ToString("C")
+        <input type="hidden" name="Detalles[@Model.PlatoId].Subtotal" value="@Model.Subtotal" />
+    </td>
+    <td class="text-end">
+        <button type="button" class="btn btn-sm btn-outline-danger eliminar">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </td>
+</tr>

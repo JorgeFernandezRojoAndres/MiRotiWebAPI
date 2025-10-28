@@ -1,0 +1,83 @@
+@model MiRoti.Models.Plato 
+
+@{
+    ViewData["Title"] = "Detalles del Plato";
+    var ganancia = Model.PrecioVenta - Model.CostoTotal;
+    var margen = Model.PrecioVenta > 0 ? (ganancia / Model.PrecioVenta) * 100 : 0;
+}
+
+<div class="container mt-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold text-dark mb-2">
+            <i class="bi bi-egg-fried me-2 text-warning"></i> @Model.Nombre
+        </h2>
+        <div>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-primary me-2">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-sm btn-danger me-2">
+                <i class="bi bi-trash"></i> Eliminar
+            </a>
+            <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="row g-0">
+            <div class="col-md-5">
+                @if (!string.IsNullOrEmpty(Model.ImagenUrl))
+                {
+                    <img src="@Model.ImagenUrl" alt="@Model.Nombre"
+                         class="img-fluid rounded-start w-100"
+                         style="object-fit: cover; height: 100%;" />
+                }
+                else
+                {
+                    <div class="d-flex align-items-center justify-content-center bg-light h-100">
+                        <i class="bi bi-image fs-1 text-muted"></i>
+                        <span class="ms-2 text-muted">Sin imagen</span>
+                    </div>
+                }
+            </div>
+            <div class="col-md-7">
+                <div class="card-body">
+                    <h4 class="card-title fw-semibold mb-2">@Model.Nombre</h4>
+                    <p class="text-muted">@Model.Descripcion</p>
+
+                    <hr />
+
+                    <div class="mb-2">
+                        <strong>Precio de Venta:</strong>
+                        <span class="text-success ms-2">@Model.PrecioVenta.ToString("C0")</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Costo Total:</strong>
+                        <span class="text-danger ms-2">@Model.CostoTotal.ToString("C0")</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Ganancia:</strong>
+                        <span class="text-primary ms-2">@ganancia.ToString("C0")</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Margen:</strong>
+                        <span class="ms-2">@margen.ToString("0.0")%</span>
+                    </div>
+
+                    <div>
+                        <strong>Estado:</strong>
+                        @if (Model.Disponible)
+                        {
+                            <span class="badge bg-success ms-2">Disponible</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary ms-2">No disponible</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
