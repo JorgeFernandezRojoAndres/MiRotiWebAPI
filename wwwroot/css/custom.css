@@ -1,0 +1,48 @@
+/* 🌙 === MODO OSCURO GENERAL === */
+body.dark-mode {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+/* Cards */
+.dark-mode .card {
+    background-color: #1e1e1e !important;
+    border: 1px solid #333 !important;
+    color: #f5f5f5;
+}
+
+/* Textos */
+.dark-mode p,
+.dark-mode h2,
+.dark-mode h4,
+.dark-mode h5 {
+    color: #f5f5f5 !important;
+}
+
+/* Íconos conservan su color original */
+.dark-mode .text-warning { color: #ffb300 !important; }
+.dark-mode .text-success { color: #66bb6a !important; }
+.dark-mode .text-primary { color: #64b5f6 !important; }
+.dark-mode .text-danger  { color: #ef5350 !important; }
+
+/* Botones */
+.dark-mode .btn-outline-warning,
+.dark-mode .btn-outline-success,
+.dark-mode .btn-outline-primary {
+    border-color: #aaa;
+    color: #f5f5f5;
+}
+
+.dark-mode .btn-outline-warning:hover,
+.dark-mode .btn-outline-success:hover,
+.dark-mode .btn-outline-primary:hover {
+    background-color: #333;
+    color: #fff;
+}
+
+/* Alerta */
+.dark-mode .alert-warning {
+    background-color: #332b00;
+    border-color: #ffb300;
+    color: #ffecb3;
+}

@@ -6,6 +6,9 @@ using MiRoti.Data;
 using MiRoti.Interfaces;
 using MiRoti.Repositories;
 using MiRoti.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace MiRoti
 {
@@ -40,6 +43,37 @@ namespace MiRoti
             builder.Services.AddScoped<ReporteService>();
             builder.Services.AddScoped<EmailService>();
 
+            // 🔐 Configuración de autenticación combinada: Cookies (MVC) + JWT (API)
+            var jwtSettings = builder.Configuration.GetSection("Jwt");
+
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = "Cookies";
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddCookie("Cookies", options =>
+            {
+                options.LoginPath = "/Auth/Login";
+                options.AccessDeniedPath = "/Auth/Denied";
+            })
+            .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtSettings["Issuer"],
+                    ValidAudience = jwtSettings["Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"] ?? throw new InvalidOperationException("JWT Key is not configured")))
+                };
+            });
+
+
+            // 🔓 Agregar autorización (por roles)
+            builder.Services.AddAuthorization();
+
             var app = builder.Build();
 
             // 🔹 Manejo de errores
@@ -53,9 +87,12 @@ namespace MiRoti
             app.UseStaticFiles();
             app.UseRouting();
             app.UseSession();
+
+            // 🧩 Autenticación y autorización
+            app.UseAuthentication();
             app.UseAuthorization();
 
-            // ✅ Rutas MVC (nuevo formato, sin UseEndpoints)
+            // ✅ Rutas MVC (nuevo formato)
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Auth}/{action=Login}/{id?}"
@@ -79,6 +116,22 @@ namespace MiRoti
             {
                 var context = scope.ServiceProvider.GetRequiredService<MiRotiContext>();
                 DbInitializer.Initialize(context);
+            }
+
+            // 🧩 === SOLO PARA GENERAR HASHES TEMPORALES ===
+            if (args.Contains("--hash"))
+            {
+                Console.WriteLine("=== Generador de Hashes BCrypt ===\n");
+                string[] contrasenias = { "admin123", "chef123", "cliente123", "cadete123" };
+
+                foreach (var pass in contrasenias)
+                {
+                    string hash = BCrypt.Net.BCrypt.HashPassword(pass);
+                    Console.WriteLine($"{pass} -> {hash}");
+                }
+
+                Console.WriteLine("\n💡 Copiá los hashes y pegá en tu base con UPDATE Usuario ...");
+                return; // 🔚 evita ejecutar el servidor web
             }
 
             app.Run();

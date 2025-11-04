@@ -8,76 +8,89 @@
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold">Panel General</h2>
-        <a asp-controller="Analisis" asp-action="Index" class="btn btn-warning text-white">
+        <h2 class="fw-bold text-dark">
+            <i class="bi bi-speedometer2 text-warning me-2"></i> Panel General
+        </h2>
+        <a asp-controller="Analisis" asp-action="Index" class="btn btn-warning text-white shadow-sm">
             <i class="bi bi-graph-up"></i> Ver análisis
         </a>
     </div>
 
-    <p class="text-muted">Resumen general de la actividad del sistema</p>
+    <p class="text-muted mb-4">Resumen general de la actividad del sistema</p>
 
     <!-- 🔹 Cards principales -->
-    <div class="row g-3">
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0 p-3">
+    <div class="row g-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-light">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="mb-1 fw-semibold">Platos registrados</p>
-                        <h4>@totalPlatos</h4>
+                        <p class="mb-1 fw-semibold text-secondary">Platos registrados</p>
+                        <h4 class="fw-bold text-dark">@totalPlatos</h4>
                     </div>
-                    <i class="bi bi-egg-fried fs-3 text-warning"></i>
+                    <i class="bi bi-egg-fried fs-2 text-warning"></i>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0 p-3">
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-light">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="mb-1 fw-semibold">Pedidos realizados</p>
-                        <h4>@totalPedidos</h4>
+                        <p class="mb-1 fw-semibold text-secondary">Pedidos realizados</p>
+                        <h4 class="fw-bold text-dark">@totalPedidos</h4>
                     </div>
-                    <i class="bi bi-receipt fs-3 text-success"></i>
+                    <i class="bi bi-receipt fs-2 text-success"></i>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0 p-3">
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-light">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="mb-1 fw-semibold">Ventas Totales</p>
-                        <h4>@ventasTotales.ToString("C0")</h4>
+                        <p class="mb-1 fw-semibold text-secondary">Ventas Totales</p>
+                        <h4 class="fw-bold text-dark">@ventasTotales.ToString("C0")</h4>
                     </div>
-                    <i class="bi bi-cash-coin fs-3 text-primary"></i>
+                    <i class="bi bi-cash-coin fs-2 text-primary"></i>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card shadow-sm border-0 p-3">
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-light">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="mb-1 fw-semibold">Clientes Activos</p>
-                        <h4>@clientesActivos</h4>
+                        <p class="mb-1 fw-semibold text-secondary">Clientes Activos</p>
+                        <h4 class="fw-bold text-dark">@clientesActivos</h4>
                     </div>
-                    <i class="bi bi-people fs-3 text-danger"></i>
+                    <i class="bi bi-people fs-2 text-danger"></i>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- 🔹 Mensaje si no hay datos -->
+    @if (totalPlatos == 0 && totalPedidos == 0 && ventasTotales == 0 && clientesActivos == 0)
+    {
+        <div class="alert alert-warning text-center mt-4 shadow-sm">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Aún no hay datos registrados en el sistema.
+        </div>
+    }
+
     <!-- 🔹 Enlaces rápidos -->
     <div class="mt-5">
-        <h5 class="fw-semibold mb-3">Accesos rápidos</h5>
+        <h5 class="fw-semibold mb-3 text-dark">
+            <i class="bi bi-lightning-charge-fill text-warning me-2"></i> Accesos rápidos
+        </h5>
         <div class="d-flex flex-wrap gap-3">
-            <a asp-controller="Platos" asp-action="Index" class="btn btn-outline-warning">
+            <a asp-controller="Platos" asp-action="Index" class="btn btn-outline-warning shadow-sm">
                 <i class="bi bi-egg-fried me-1"></i> Gestionar Platos
             </a>
-            <a asp-controller="Pedidos" asp-action="Index" class="btn btn-outline-success">
+            <a asp-controller="Pedidos" asp-action="Index" class="btn btn-outline-success shadow-sm">
                 <i class="bi bi-receipt me-1"></i> Ver Pedidos
             </a>
-            <a asp-controller="Analisis" asp-action="Index" class="btn btn-outline-primary">
+            <a asp-controller="Analisis" asp-action="Index" class="btn btn-outline-primary shadow-sm">
                 <i class="bi bi-graph-up-arrow me-1"></i> Análisis de Ventas
             </a>
         </div>

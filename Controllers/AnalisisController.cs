@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MiRoti.Services;
 using System.Linq;
+using Microsoft.AspNetCore.Http;
 
 namespace MiRoti.Controllers
 {
@@ -15,6 +16,17 @@ namespace MiRoti.Controllers
 
         public IActionResult Index()
         {
+            // 🔐 Validar sesión y rol
+            var rol = HttpContext.Session.GetString("UsuarioRol");
+
+            if (string.IsNullOrEmpty(rol) || rol != "Admin")
+            {
+                // 🚫 Si no hay sesión o no es Admin → redirige al Login
+                HttpContext.Session.Clear();
+                return RedirectToAction("Login", "Auth");
+            }
+
+            // 🔹 Obtener reporte de ganancias
             var reporte = _reporteService.ObtenerReporteGanancias().ToList();
 
             if (!reporte.Any())
@@ -27,7 +39,7 @@ namespace MiRoti.Controllers
                 return View();
             }
 
-            // ✅ Cálculos directos
+            // ✅ Cálculos directos (manteniendo tu lógica original)
             var totalVentas = reporte.Sum(x => (decimal)x.GetType().GetProperty("PrecioVenta")!.GetValue(x, null)!);
             var gananciaTotal = reporte.Sum(x => (decimal)x.GetType().GetProperty("Ganancia")!.GetValue(x, null)!);
             var platoMasVendido = reporte
@@ -35,6 +47,7 @@ namespace MiRoti.Controllers
                 .First()
                 .GetType().GetProperty("Plato")!.GetValue(reporte.First(), null)!.ToString();
 
+            // 🔹 Pasar datos a la vista
             ViewData["Reporte"] = reporte;
             ViewData["TotalVentas"] = totalVentas;
             ViewData["GananciaTotal"] = gananciaTotal;

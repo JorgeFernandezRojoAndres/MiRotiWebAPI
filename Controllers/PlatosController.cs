@@ -4,9 +4,12 @@ using MiRoti.Data;
 using MiRoti.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MiRoti.Controllers
 {
+    // 🔐 Solo "Admin" y "Cocinero" pueden acceder al módulo de platos
+    [Authorize(Roles = "Admin,Cocinero")]
     public class PlatosController : Controller
     {
         private readonly MiRotiContext _context;
@@ -110,6 +113,7 @@ namespace MiRoti.Controllers
 
             return View(plato);
         }
+
         // 🔹 Ver detalles de un plato (incluye imagen)
         public async Task<IActionResult> Details(int id)
         {
@@ -152,6 +156,5 @@ namespace MiRoti.Controllers
 
             return RedirectToAction(nameof(Index));
         }
-
     }
 }

@@ -12,6 +12,7 @@ namespace MiRoti.DTOs
         public decimal Total { get; set; }
 
         public List<DetallePedidoDTO> Detalles { get; set; } = new();
+        public string Cadete { get; internal set; } = string.Empty;
     }
 
     public class DetallePedidoDTO

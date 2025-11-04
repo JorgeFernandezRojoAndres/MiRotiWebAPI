@@ -1,12 +1,10 @@
 @{
     var title = ViewData["Title"] ?? "Panel de Administración";
     var rol = Context.Session.GetString("UsuarioRol") ?? "Invitado";
-
 }
 
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -23,11 +21,13 @@
         body {
             background-color: #faf8f6;
             font-family: 'Segoe UI', sans-serif;
+            transition: background-color 0.4s, color 0.3s;
         }
 
         .navbar {
             background-color: #fff;
             border-bottom: 1px solid #eee;
+            transition: background-color 0.3s;
         }
 
         .navbar-brand {
@@ -58,12 +58,66 @@
             border-top: 1px solid #eee;
             text-align: center;
         }
+
+        /* 🌙 === MODO OSCURO === */
+        body.dark-mode {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+
+        .dark-mode .navbar {
+            background-color: #1e1e1e !important;
+            border-color: #333;
+        }
+
+        .dark-mode .navbar-brand {
+            color: #ffb300 !important;
+        }
+
+        .dark-mode .nav-link {
+            color: #ddd;
+        }
+
+        .dark-mode .nav-link.active {
+            color: #ffb300 !important;
+            border-bottom-color: #ffb300;
+        }
+
+        .dark-mode footer {
+            border-color: #333;
+            color: #bbb;
+        }
+
+        .dark-mode .btn-outline-light {
+            border-color: #ffb300;
+            color: #ffb300;
+        }
+
+        .dark-mode .btn-outline-light:hover {
+            background-color: #ffb300;
+            color: #000;
+        }
     </style>
 </head>
 
 <body>
     <script>
         console.log("🧠 Rol actual en sesión:", "@rol");
+
+        // 🌙 Modo oscuro persistente
+        const toggleDark = () => {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('modoOscuro', isDark);
+            document.getElementById('themeIcon').className = isDark ? 'bi bi-brightness-high-fill' : 'bi bi-moon-stars-fill';
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const isDark = localStorage.getItem('modoOscuro') === 'true';
+            if (isDark) {
+                document.body.classList.add('dark-mode');
+            }
+        });
     </script>
 
     <!-- 🔹 Barra de navegación superior -->
@@ -84,49 +138,51 @@
                     {
                         <li class="nav-item">
                             <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Platos" ? "active" : "")"
-                                asp-controller="Platos" asp-action="Index">
+                               asp-controller="Platos" asp-action="Index">
                                 <i class="bi bi-egg-fried me-1"></i> Platos
                             </a>
                         </li>
 
                         <li class="nav-item">
                             <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Pedidos" ? "active" : "")"
-                                asp-controller="Pedidos" asp-action="Index">
+                               asp-controller="Pedidos" asp-action="Index">
                                 <i class="bi bi-receipt-cutoff me-1"></i> Pedidos
                             </a>
                         </li>
 
                         <li class="nav-item">
                             <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Analisis" ? "active" : "")"
-                                asp-controller="Analisis" asp-action="Index">
+                               asp-controller="Analisis" asp-action="Index">
                                 <i class="bi bi-bar-chart-line-fill me-1"></i> Análisis
                             </a>
                         </li>
                     }
-
-
-                    else if (rol.Equals("Cocinero", StringComparison.OrdinalIgnoreCase) || rol.Equals("Chef",
-                    StringComparison.OrdinalIgnoreCase))
+                    else if (rol.Equals("Cocinero", StringComparison.OrdinalIgnoreCase) || rol.Equals("Chef", StringComparison.OrdinalIgnoreCase))
                     {
                         <li class="nav-item">
                             <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Platos" ? "active" : "")"
-                                asp-controller="Platos" asp-action="Index">
+                               asp-controller="Platos" asp-action="Index">
                                 <i class="bi bi-egg-fried me-1"></i> Platos
                             </a>
                         </li>
                     }
 
+                    @* 🔸 Botón de modo oscuro (siempre visible) *@
+                    <li class="nav-item ms-2">
+                        <button onclick="toggleDark()" class="btn btn-sm btn-outline-light border-0">
+                            <i id="themeIcon" class="bi bi-moon-stars-fill"></i>
+                        </button>
+                    </li>
 
                     @* 🔸 Botón de cerrar sesión visible para ambos *@
                     @if (rol == "Admin" || rol == "Cocinero")
                     {
-                        <li class="nav-item">
+                        <li class="nav-item ms-2">
                             <a class="nav-link text-danger" asp-controller="Auth" asp-action="Logout">
                                 <i class="bi bi-box-arrow-right me-1"></i> Cerrar sesión
                             </a>
                         </li>
                     }
-
                 </ul>
             </div>
         </div>
@@ -143,5 +199,4 @@
 
     @RenderSection("Scripts", required: false)
 </body>
-
 </html>
