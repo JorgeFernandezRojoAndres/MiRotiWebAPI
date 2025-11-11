@@ -5,8 +5,15 @@ obj/
 *.db
 *.log
 .vscode/
-*.DS_Store" > .gitignore
-
-git add .gitignore
-git commit -m "Agrega .gitignore para excluir bin y obj"
-git push origin main
+*.vs/
+*.DS_Store
+*.userosscache
+*.sln.docstates
+*.dbmdl
+*.pdb
+*.cache
+*.tmp
+*.lock
+*.xml
+*.json.lock
+" > .gitignore
