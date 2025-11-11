@@ -38,10 +38,22 @@ namespace MiRoti.ControllersApi
             if (usuario == null)
                 return Unauthorized(new { mensaje = "Usuario no encontrado" });
 
+            // 🧩 Depuración: mostrar valores que se comparan
+            Console.WriteLine("------------------------------------------------------");
+            Console.WriteLine($"🧠 Comparando contraseña recibida: '{request.Contrasenia}'");
+            Console.WriteLine($"🧩 Hash guardado en BD: '{usuario.Contrasenia}'");
+            Console.WriteLine("------------------------------------------------------");
+
             // ✅ Verificar la contraseña
             bool passwordValida = BCrypt.Net.BCrypt.Verify(request.Contrasenia, usuario.Contrasenia);
+
             if (!passwordValida)
+            {
+                Console.WriteLine("❌ Contraseña incorrecta (no coincide el hash)");
                 return Unauthorized(new { mensaje = "Contraseña incorrecta" });
+            }
+
+            Console.WriteLine("✅ Contraseña verificada correctamente");
 
             // ✅ Generar el token JWT
             var token = _authService.GenerarToken(usuario);

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MiRoti")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fac36ceadbe4f2a8e0c3462b59b3226297515c37")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6b9a48a1e34fe8e757bd4f3b3b96548650b0938e")]
 [assembly: System.Reflection.AssemblyProductAttribute("MiRoti")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MiRoti")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

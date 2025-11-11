@@ -64,40 +64,39 @@ namespace MiRoti
             var jwtAudience = jwtSection["Audience"] ?? "MiRotiMobile";
 
             builder.Services.AddAuthentication(options =>
- {
-     // ✅ El panel web usa Cookies por defecto
-     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-     options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-     options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
- })
-
-             // 🔹 Autenticación por cookies para el panel web
-             .AddCookie(options =>
-             {
-                 options.LoginPath = "/Auth/Login";
-                 options.LogoutPath = "/Auth/Logout";
-                 options.AccessDeniedPath = "/Auth/Login";
-                 options.ExpireTimeSpan = TimeSpan.FromHours(8);
-                 options.Cookie.SameSite = SameSiteMode.None;
-                 options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-             })
-             // 🔹 Autenticación por JWT para la app móvil
-             .AddJwtBearer(options =>
-             {
-                 options.RequireHttpsMetadata = false; // ⚙️ solo desarrollo
-                 options.SaveToken = true;
-                 options.TokenValidationParameters = new TokenValidationParameters
-                 {
-                     ValidateIssuer = true,
-                     ValidateAudience = true,
-                     ValidateLifetime = true,
-                     ClockSkew = TimeSpan.Zero,
-                     ValidateIssuerSigningKey = true,
-                     ValidIssuer = jwtIssuer,
-                     ValidAudience = jwtAudience,
-                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
-                 };
-             });
+            {
+                // ✅ El panel web usa Cookies por defecto
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            })
+            // 🔹 Autenticación por cookies para el panel web
+            .AddCookie(options =>
+            {
+                options.LoginPath = "/Auth/Login";
+                options.LogoutPath = "/Auth/Logout";
+                options.AccessDeniedPath = "/Auth/Login";
+                options.ExpireTimeSpan = TimeSpan.FromHours(8);
+                options.Cookie.SameSite = SameSiteMode.None;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            })
+            // 🔹 Autenticación por JWT para la app móvil
+            .AddJwtBearer(options =>
+            {
+                options.RequireHttpsMetadata = false; // ⚙️ solo desarrollo
+                options.SaveToken = true;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtIssuer,
+                    ValidAudience = jwtAudience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+                };
+            });
 
             builder.Services.AddAuthorization();
 
@@ -126,10 +125,24 @@ namespace MiRoti
                 app.UseExceptionHandler("/Home/Error");
             }
 
-            app.UseHttpsRedirection();
+           
             app.UseStaticFiles();
             app.UseRouting();
             app.UseSession();
+
+            // 🔹 Interceptor para rutas API: evita redirección al login HTML
+            app.Use(async (context, next) =>
+            {
+                if (context.Request.Path.StartsWithSegments("/api") &&
+                    (context.User?.Identity?.IsAuthenticated != true))
+                {
+                    context.Response.StatusCode = 401; // Unauthorized
+                    await context.Response.WriteAsync("Unauthorized");
+                    return;
+                }
+
+                await next();
+            });
 
             // 🔹 Orden correcto: primero autenticación, luego autorización
             app.UseAuthentication();
@@ -173,8 +186,9 @@ namespace MiRoti
             // ----------------------------
             // 🌍 Direcciones LAN
             // ----------------------------
+            app.Urls.Clear();
             app.Urls.Add("http://192.168.1.35:5000");
-            app.Urls.Add("https://0.0.0.0:5001");
+            
 
             // ----------------------------
             // ▶️ Ejecutar
