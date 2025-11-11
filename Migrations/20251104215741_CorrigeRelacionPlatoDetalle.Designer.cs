@@ -4,6 +4,7 @@ using MiRoti.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MiRoti.Migrations
 {
     [DbContext(typeof(MiRotiContext))]
-    partial class MiRotiContextModelSnapshot : ModelSnapshot
+    [Migration("20251104215741_CorrigeRelacionPlatoDetalle")]
+    partial class CorrigeRelacionPlatoDetalle
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

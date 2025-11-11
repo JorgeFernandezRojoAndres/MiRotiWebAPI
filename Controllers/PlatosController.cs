@@ -21,12 +21,26 @@ namespace MiRoti.Controllers
             _env = env;
         }
 
-        // 🔹 Listado de platos
-        public async Task<IActionResult> Index()
-        {
-            var platos = await _context.Platos.ToListAsync();
-            return View(platos);
-        }
+        // 🔹 Listado de platos con pedidos relacionados (opcional)
+      public async Task<IActionResult> Index()
+{
+    var platos = await _context.Platos
+        .Include(p => p.Detalles)              // ✅ Carga los DetallePedido asociados
+            .ThenInclude(d => d.Pedido)        // ✅ Y cada pedido vinculado
+        .Include(p => p.PlatoIngredientes)     // ✅ Opcional: carga los ingredientes
+        .ToListAsync();
+
+    // 🧮 Calcular métricas para la vista
+    ViewData["Activos"] = platos.Count(p => p.Disponible);
+    ViewData["Inactivos"] = platos.Count(p => !p.Disponible);
+    ViewData["MargenPromedio"] = platos.Any()
+        ? platos.Average(p => (double)((p.PrecioVenta - p.CostoTotal) / p.PrecioVenta) * 100)
+        : 0;
+
+    return View(platos);
+}
+
+
 
         // 🔹 Formulario de creación
         public IActionResult Create() => View();
@@ -124,7 +138,7 @@ namespace MiRoti.Controllers
             return View(plato);
         }
 
-        // 🔹 Eliminar un plato (confirmación)
+        // 🔹 Mostrar vista de confirmación antes de eliminar
         public async Task<IActionResult> Delete(int id)
         {
             var plato = await _context.Platos.FirstOrDefaultAsync(p => p.Id == id);
@@ -134,8 +148,8 @@ namespace MiRoti.Controllers
             return View(plato);
         }
 
-        // 🔹 Confirmar eliminación
-        [HttpPost, ActionName("DeleteConfirmed")]
+        // 🔹 Confirmar eliminación (ahora desactiva en lugar de borrar)
+        [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
@@ -143,18 +157,67 @@ namespace MiRoti.Controllers
             if (plato == null)
                 return NotFound();
 
-            // 🧹 Eliminar imagen del servidor si existe
-            if (!string.IsNullOrEmpty(plato.ImagenUrl))
+            try
             {
-                var imagePath = Path.Combine(_env.WebRootPath, plato.ImagenUrl.TrimStart('/').Replace("/", "\\"));
-                if (System.IO.File.Exists(imagePath))
-                    System.IO.File.Delete(imagePath);
+                // ⚠️ En lugar de eliminar físicamente, lo marcamos como inactivo
+                plato.Disponible = false;
+                _context.Update(plato);
+                await _context.SaveChangesAsync();
+
+                TempData["Info"] = "⚠️ El plato estaba asociado a pedidos y fue marcado como inactivo.";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️ Error al desactivar plato: {ex.Message}");
+                TempData["Error"] = "No se pudo desactivar el plato. Verifique la conexión o los permisos.";
+                return RedirectToAction(nameof(Index));
             }
 
-            _context.Platos.Remove(plato);
-            await _context.SaveChangesAsync();
+            // 🧹 Intentar eliminar imagen del servidor si no está en uso
+            if (!string.IsNullOrEmpty(plato.ImagenUrl))
+            {
+                try
+                {
+                    var imagePath = Path.Combine(_env.WebRootPath, plato.ImagenUrl.TrimStart('/').Replace("/", "\\"));
+                    if (System.IO.File.Exists(imagePath))
+                        System.IO.File.Delete(imagePath);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"⚠️ Error al eliminar imagen: {ex.Message}");
+                }
+            }
 
             return RedirectToAction(nameof(Index));
         }
+
+        // 🔹 Reactivar un plato inactivo
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Reactivar(int id)
+        {
+            var plato = await _context.Platos.FindAsync(id);
+            if (plato == null)
+                return NotFound();
+
+            plato.Disponible = true;
+
+            try
+            {
+                _context.Update(plato);
+                await _context.SaveChangesAsync();
+
+                TempData["Info"] = $"✅ El plato '{plato.Nombre}' fue reactivado correctamente.";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️ Error al reactivar plato: {ex.Message}");
+                TempData["Error"] = "No se pudo reactivar el plato. Verifique la conexión o los permisos.";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+
     }
 }

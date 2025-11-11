@@ -14,7 +14,7 @@ namespace MiRoti.Data
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Cliente> Clientes { get; set; }
         public DbSet<Cadete> Cadetes { get; set; }
-        public DbSet<Cocinero> Cocineros { get; set; } 
+        public DbSet<Cocinero> Cocineros { get; set; }
         public DbSet<Pedido> Pedidos { get; set; }
         public DbSet<DetallePedido> DetallesPedido { get; set; }
         public DbSet<Plato> Platos { get; set; }
@@ -34,17 +34,17 @@ namespace MiRoti.Data
                 .HasValue<Cadete>("Cadete")
                 .HasValue<Cocinero>("Cocinero"); // ✅ agregado
 
-            // 🧩 Pedido ↔ DetallePedido
+            // 🧩 Pedido ↔ DetallePedido (uno a muchos)
             modelBuilder.Entity<DetallePedido>()
                 .HasOne(d => d.Pedido)
                 .WithMany(p => p.Detalles)
                 .HasForeignKey(d => d.PedidoId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // 🧩 DetallePedido ↔ Plato
+            // 🧩 Plato ↔ DetallePedido (uno a muchos)
             modelBuilder.Entity<DetallePedido>()
                 .HasOne(d => d.Plato)
-                .WithMany()
+                .WithMany(p => p.Detalles) // ✅ antes era .WithMany() → causaba PlatoId1
                 .HasForeignKey(d => d.PlatoId)
                 .OnDelete(DeleteBehavior.Restrict);
 
@@ -76,5 +76,6 @@ namespace MiRoti.Data
                 .HasIndex(u => u.Email)
                 .IsUnique();
         }
+
     }
 }

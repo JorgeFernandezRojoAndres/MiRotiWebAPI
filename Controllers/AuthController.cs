@@ -1,12 +1,12 @@
-using Microsoft.AspNetCore.Mvc;
-using MiRoti.Data;
-using MiRoti.Models;
-using MiRoti.Services;
-using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
-using BCrypt.Net;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc; 
+using MiRoti.Data; 
+using MiRoti.Models; 
+using MiRoti.Services; 
+using Microsoft.AspNetCore.Http; 
+using Microsoft.EntityFrameworkCore; 
+using BCrypt.Net; 
+using System.Security.Claims; 
+using Microsoft.AspNetCore.Authentication; 
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace MiRoti.Controllers
@@ -36,35 +36,28 @@ namespace MiRoti.Controllers
         [Route("Auth/Login")]
         public async Task<IActionResult> Login(string email, string contrasenia)
         {
+            // Verificación de campos vacíos
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(contrasenia))
             {
-                ViewBag.Error = "Debe ingresar un email y una contraseña.";
+                TempData["Error"] = "Debe ingresar un email y una contraseña.";
                 return View("~/Views/Auth/Login.cshtml");
             }
 
             try
             {
-                // 🔹 Buscar usuario por email
-                var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
-                if (usuario == null)
+                // 🔹 Obtener usuario por email
+                var usuario = await GetUserByEmailAsync(email);
+                if (usuario == null || !BCrypt.Net.BCrypt.Verify(contrasenia, usuario.Contrasenia))
                 {
-                    ViewBag.Error = "Email o contraseña incorrectos.";
+                    TempData["Error"] = "Email o contraseña incorrectos.";
                     return View("~/Views/Auth/Login.cshtml");
                 }
 
-                // 🔹 Verificar contraseña con BCrypt
-                bool esValido = BCrypt.Net.BCrypt.Verify(contrasenia, usuario.Contrasenia);
-                if (!esValido)
-                {
-                    ViewBag.Error = "Email o contraseña incorrectos.";
-                    return View("~/Views/Auth/Login.cshtml");
-                }
-
-                // ✅ Generar token JWT (para app móvil)
+                // ✅ Generar token JWT
                 var token = await _authService.AutenticarAsync(email, contrasenia);
                 if (token == null)
                 {
-                    ViewBag.Error = "Error al generar el token.";
+                    TempData["Error"] = "Error al generar el token.";
                     return View("~/Views/Auth/Login.cshtml");
                 }
 
@@ -73,51 +66,39 @@ namespace MiRoti.Controllers
                 HttpContext.Session.SetString("UsuarioRol", usuario.Rol);
                 HttpContext.Session.SetString("TokenJWT", token);
 
-                // 🧩 Crear cookie de autenticación (para MVC)
+                // 🧩 Crear cookie de autenticación para MVC
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.Name, usuario.Nombre ?? usuario.Email),
                     new Claim(ClaimTypes.Role, usuario.Rol ?? "Cliente")
                 };
 
-                var identity = new ClaimsIdentity(claims, "Cookies");
+                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var principal = new ClaimsPrincipal(identity);
 
-                await HttpContext.SignInAsync("Cookies", principal, new AuthenticationProperties
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, new AuthenticationProperties
                 {
-                    IsPersistent = true, // mantiene sesión si cierra navegador
+                    IsPersistent = true, // Mantiene sesión si cierra navegador
                     ExpiresUtc = DateTime.UtcNow.AddHours(8)
                 });
 
                 // ✅ Redirigir según el rol
-                switch (usuario.Rol)
+                return usuario.Rol switch
                 {
-                    case "Admin":
-                        return RedirectToAction("Index", "Analisis");
-
-                    case "Cocinero":
-                        return RedirectToAction("Index", "Platos");
-
-                    case "Cadete":
-                    case "Cliente":
-                        TempData["MensajeApp"] = "📱 Este acceso es solo para el panel web. Ingresá desde la app móvil.";
-                        await HttpContext.SignOutAsync("Cookies");
-                        HttpContext.Session.Clear();
-                        return RedirectToAction("Login", "Auth");
-
-                    default:
-                        ViewBag.Error = "Rol no reconocido. Contacte al administrador.";
-                        return View("~/Views/Auth/Login.cshtml");
-                }
+                    "Admin" => RedirectToAction("Index", "Analisis"),
+                    "Cocinero" => RedirectToAction("Index", "Platos"),
+                    "Cadete" or "Cliente" => RedirectToAction("Login", "Auth", new { errorMessage = "📱 Este acceso es solo para el panel web. Ingresá desde la app móvil." }),
+                    _ => RedirectToAction("Login", "Auth", new { errorMessage = "Rol no reconocido. Contacte al administrador." })
+                };
             }
             catch (Exception ex)
             {
-                ViewBag.Error = $"Error al iniciar sesión: {ex.Message}";
+                TempData["Error"] = $"Error al iniciar sesión: {ex.Message}";
                 return View("~/Views/Auth/Login.cshtml");
             }
         }
 
-        // ✅ GET: /Auth/Register (solo si lo usás)
+        // ✅ GET: /Auth/Register (solo si lo usas)
         [HttpGet]
         [Route("Auth/Register")]
         public IActionResult Register()
@@ -133,7 +114,7 @@ namespace MiRoti.Controllers
         {
             if (!ModelState.IsValid)
             {
-                ViewBag.Error = "Debe completar todos los campos.";
+                TempData["Error"] = "Debe completar todos los campos.";
                 return View("~/Views/Auth/Register.cshtml");
             }
 
@@ -145,7 +126,7 @@ namespace MiRoti.Controllers
             }
             catch (Exception ex)
             {
-                ViewBag.Error = $"❌ Error: {ex.Message}";
+                TempData["Error"] = $"❌ Error: {ex.Message}";
                 return View("~/Views/Auth/Register.cshtml");
             }
         }
@@ -155,9 +136,15 @@ namespace MiRoti.Controllers
         [Route("Auth/Logout")]
         public async Task<IActionResult> Logout()
         {
-            await HttpContext.SignOutAsync("Cookies"); // cierra cookie de autenticación
-            HttpContext.Session.Clear();
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme); // Cierra cookie de autenticación
+            HttpContext.Session.Clear(); // Limpia la sesión
             return RedirectToAction("Login", "Auth");
+        }
+
+        // 🔹 Método para obtener usuario por email
+        private async Task<Usuario?> GetUserByEmailAsync(string email)
+        {
+            return await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
         }
     }
 }

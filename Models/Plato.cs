@@ -27,7 +27,12 @@ namespace MiRoti.Models
         [MaxLength(255)]
         public string? ImagenUrl { get; set; }
 
+        
         // 🔹 Relación muchos a muchos con ingredientes
         public ICollection<PlatoIngrediente> PlatoIngredientes { get; set; } = new List<PlatoIngrediente>();
+
+        // 🔹 Relación uno a muchos con DetallePedido (no directamente con Pedido)
+        public ICollection<DetallePedido> Detalles { get; set; } = new List<DetallePedido>();
+
     }
 }

@@ -120,7 +120,7 @@
         });
     </script>
 
-    <!-- 🔹 Barra de navegación superior -->
+        <!-- 🔹 Barra de navegación superior -->
     <nav class="navbar navbar-expand-lg shadow-sm">
         <div class="container">
             <a class="navbar-brand" asp-controller="Home" asp-action="Index">
@@ -167,6 +167,16 @@
                         </li>
                     }
 
+                    @* 🔸 Mostrar rol actual en la barra *@
+                    @if (rol != "Invitado")
+                    {
+                        <li class="nav-item d-flex align-items-center ms-3">
+                            <span class="badge bg-warning text-dark fw-semibold px-3 py-2 shadow-sm">
+                                👤 Rol: @rol
+                            </span>
+                        </li>
+                    }
+
                     @* 🔸 Botón de modo oscuro (siempre visible) *@
                     <li class="nav-item ms-2">
                         <button onclick="toggleDark()" class="btn btn-sm btn-outline-light border-0">
@@ -187,6 +197,7 @@
             </div>
         </div>
     </nav>
+
 
     <!-- Contenido principal -->
     <main class="container mt-4">

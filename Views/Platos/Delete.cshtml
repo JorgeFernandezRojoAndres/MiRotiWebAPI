@@ -46,7 +46,8 @@
                 </div>
             </div>
 
-            <form asp-action="DeleteConfirmed" method="post" class="mt-4">
+            <!-- ✅ Acción corregida -->
+            <form asp-action="Delete" method="post" class="mt-4">
                 <input type="hidden" asp-for="Id" />
 
                 <button type="submit" class="btn btn-danger">

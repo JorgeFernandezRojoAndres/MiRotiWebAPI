@@ -1,0 +1,24 @@
+@model MiRoti.Models.Pedido 
+
+@{
+    ViewData["Title"] = "Editar Estado del Pedido";
+}
+
+<h2>@ViewData["Title"] #@Model.Id</h2>
+
+<form method="post">
+    <div class="form-group">
+        <label for="Estado">Estado del Pedido</label>
+        <!-- Usando asp-for para manejar la selección del estado -->
+        <select asp-for="Estado" class="form-select">
+            <option value="Pendiente">Pendiente</option>
+            <option value="En Preparación">En Preparación</option>
+            <option value="En Camino">En Camino</option>
+            <option value="Completado">Completado</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Actualizar Estado</button>
+</form>
+
+<a href="@Url.Action("Index", "Pedidos")">Volver</a>

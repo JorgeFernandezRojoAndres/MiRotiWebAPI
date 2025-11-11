@@ -1,29 +1,94 @@
-@model IEnumerable<MiRoti.Models.Plato>
+@model IEnumerable<MiRoti.Models.Pedido>
 
 @{
-     Context.Session.SetString("UsuarioRol", "Cocinero");
-    
     Layout = "~/Views/Shared/_Layout.cshtml";
-    ViewData["Title"] = "Gestión de Platos";
-     var rol = Context.Session.GetString("UsuarioRol") ?? "Invitado";
-    var activos = Model.Count(p => p.Disponible);
-    var inactivos = Model.Count(p => !p.Disponible);
-    var margenPromedio = Model.Any()
-        ? Model.Average(p => (double)((p.PrecioVenta - p.CostoTotal) / p.PrecioVenta) * 100)
-        : 0;
+    ViewData["Title"] = "Gestión de Pedidos";
+
+    var rol = Context.Session.GetString("UsuarioRol") ?? "Invitado";
+
+    var totalPedidos = (int?)ViewData["TotalPedidos"] ?? 0;
+    var entregados = (int?)ViewData["Entregados"] ?? 0;
+    var enCamino = (int?)ViewData["EnCamino"] ?? 0;
+    var nuevos = (int?)ViewData["Nuevos"] ?? 0;
+    var totalGanancia = (decimal?)ViewData["TotalGanancia"] ?? 0;
 }
+
+<!-- 🎨 BADGES DE ESTADO PERSONALIZADOS -->
+<style>
+    .estado-badge {
+        display: inline-block;
+        border-radius: .6rem;
+        font-weight: 600;
+        padding: .35em .75em;
+        font-size: .9rem;
+        line-height: 1;
+        text-transform: capitalize;
+        text-align: center;
+        min-width: 90px;
+    }
+
+    /* Modo claro */
+    .estado-completado {
+        background-color: #28a745 !important;
+        color: #fff !important;
+    }
+
+    .estado-camino {
+        background-color: #ff9800 !important;
+        color: #fff !important;
+    }
+
+    .estado-preparacion {
+        background-color: #ffc107 !important;
+        color: #212529 !important;
+    }
+
+    .estado-pendiente {
+        background-color: #6c757d !important;
+        color: #fff !important;
+    }
+
+    /* Modo oscuro */
+    body.dark-mode .estado-completado {
+        background-color: #2ecc71 !important;
+        color: #fff !important;
+    }
+
+    body.dark-mode .estado-camino {
+        background-color: #ffb74d !important;
+        color: #212529 !important;
+    }
+
+    body.dark-mode .estado-preparacion {
+        background-color: #ffe082 !important;
+        color: #212529 !important;
+    }
+
+    body.dark-mode .estado-pendiente {
+        background-color: #9e9e9e !important;
+        color: #212529 !important;
+    }
+
+    table.table td .estado-badge {
+        background-clip: padding-box !important;
+    }
+</style>
 
 <div class="container-fluid px-4 mt-4">
     <!-- 🔹 Encabezado -->
     <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
         <h2 class="fw-bold text-dark">
-            <i class="bi bi-egg-fried me-2 text-warning"></i> Gestión de Platos
+            <i class="bi bi-receipt-cutoff me-2 text-warning"></i> Gestión de Pedidos
         </h2>
-        <a asp-action="Create" class="btn btn-warning fw-semibold text-white shadow-sm">
-            <i class="bi bi-plus-lg"></i> Agregar Plato Nuevo
-        </a>
     </div>
-    <p class="text-muted">Crear, editar y gestionar el menú disponible para los clientes</p>
+    <p class="text-muted">Visualizá, controlá y gestioná los pedidos activos y entregados.</p>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
 
     <!-- 🔹 Tarjetas de métricas -->
     <div class="row mb-4 g-3">
@@ -31,30 +96,44 @@
             <div class="card border-0 shadow-sm p-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="mb-1 fw-semibold text-secondary">Platos Activos</p>
-                        <h4 class="fw-bold">@activos</h4>
+                        <p class="mb-1 fw-semibold text-secondary">Pedidos Totales</p>
+                        <h4 class="fw-bold">@totalPedidos</h4>
                     </div>
-                    <i class="bi bi-eye fs-3 text-success"></i>
+                    <i class="bi bi-list-check fs-3 text-warning"></i>
                 </div>
             </div>
         </div>
+
         <div class="col-md-3">
             <div class="card border-0 shadow-sm p-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="mb-1 fw-semibold text-secondary">Platos Inactivos</p>
-                        <h4 class="fw-bold">@inactivos</h4>
+                        <p class="mb-1 fw-semibold text-secondary">Entregados</p>
+                        <h4 class="fw-bold">@entregados</h4>
                     </div>
-                    <i class="bi bi-eye-slash fs-3 text-muted"></i>
+                    <i class="bi bi-check2-circle fs-3 text-success"></i>
                 </div>
             </div>
         </div>
+
         <div class="col-md-3">
             <div class="card border-0 shadow-sm p-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="mb-1 fw-semibold text-secondary">Margen Promedio</p>
-                        <h4 class="fw-bold">@margenPromedio.ToString("0.0")%</h4>
+                        <p class="mb-1 fw-semibold text-secondary">En Camino</p>
+                        <h4 class="fw-bold">@enCamino</h4>
+                    </div>
+                    <i class="bi bi-truck fs-3 text-primary"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 fw-semibold text-secondary">Ganancia Total</p>
+                        <h4 class="fw-bold">@totalGanancia.ToString("C0")</h4>
                     </div>
                     <i class="bi bi-cash-coin fs-3 text-warning"></i>
                 </div>
@@ -62,15 +141,15 @@
         </div>
     </div>
 
-    <!-- 🔹 Tabla de platos -->
+    <!-- 🔹 Tabla de pedidos -->
     <div class="card border-0 shadow-sm">
         <div class="card-body">
             @if (!Model.Any())
             {
                 <div class="text-center p-5 text-muted">
                     <i class="bi bi-box fs-1 mb-3"></i>
-                    <h5>No hay platos agregados aún</h5>
-                    <p>Haz clic en <strong>"Agregar Plato Nuevo"</strong> para comenzar</p>
+                    <h5>No hay pedidos registrados aún</h5>
+                    <p>Los pedidos aparecerán aquí una vez que sean creados por los clientes.</p>
                 </div>
             }
             else
@@ -79,63 +158,55 @@
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th>Plato</th>
-                                <th>Costo</th>
-                                <th>Precio</th>
-                                <th>Ganancia</th>
-                                <th>Margen</th>
+                                <th>Cliente</th>
+                                <th>Fecha</th>
+                                <th>Total</th>
                                 <th>Estado</th>
+                                <th>Cadete</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var p in Model)
                             {
-                                var ganancia = p.PrecioVenta - p.CostoTotal;
-                                var margen = p.PrecioVenta > 0 ? (ganancia / p.PrecioVenta) * 100 : 0;
-
                                 <tr>
-                                    <td class="d-flex align-items-center">
-                                        @if (!string.IsNullOrEmpty(p.ImagenUrl))
-                                        {
-                                            <img src="@p.ImagenUrl.Replace("/images/images", "/images")"
-                                                 alt="@p.Nombre"
-                                                 class="rounded me-2 shadow-sm"
-                                                 style="width: 50px; height: 50px; object-fit: cover; border: 1px solid #ddd;" />
-                                        }
-                                        else
-                                        {
-                                            <div class="d-flex align-items-center justify-content-center bg-light rounded me-2"
-                                                 style="width: 50px; height: 50px; border: 1px solid #ddd;">
-                                                <i class="bi bi-image text-muted"></i>
-                                            </div>
-                                        }
-                                        <span class="fw-semibold">@p.Nombre</span>
-                                    </td>
-                                    <td>@p.CostoTotal.ToString("C0")</td>
-                                    <td>@p.PrecioVenta.ToString("C0")</td>
-                                    <td>@ganancia.ToString("C0")</td>
-                                    <td>@margen.ToString("0.0")%</td>
+                                    <td>@p.Cliente?.Nombre</td>
+                                    <td>@p.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@p.Total.ToString("C0")</td>
+
+                                    <!-- Estado -->
                                     <td>
-                                        @if (p.Disponible)
-                                        {
-                                            <span class="badge bg-success">Activo</span>
+                                        @{
+                                            var estado = p.Estado?.Trim().ToLower() ?? "";
+                                            var claseEstado =
+                                            estado.Contains("entregado") || estado.Contains("complet") ? "estado-completado" :
+                                            estado.Contains("camino") ? "estado-camino" :
+                                            estado.Contains("prepar") ? "estado-preparacion" :
+                                            estado.Contains("pend") ? "estado-pendiente" :
+                                            "estado-pendiente";
                                         }
-                                        else
-                                        {
-                                            <span class="badge bg-secondary">Inactivo</span>
-                                        }
+
+                                        <span class="estado-badge @claseEstado">
+                                            @p.Estado
+                                        </span>
                                     </td>
+
+
+                                    <td>@p.Cadete?.Nombre</td>
+
+                                    <!-- Acciones -->
                                     <td>
-                                        <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary me-1">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-outline-secondary me-1">
+                                        <a asp-action="Details" asp-route-id="@p.Id"
+                                            class="btn btn-sm btn-outline-secondary me-1">
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                        <a asp-action="Delete" asp-route-id="@p.Id" class="btn btn-sm btn-outline-danger">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
+                                        @if (p.Estado != "Entregado")
+                                        {
+                                            <a asp-action="EditarEstado" asp-route-id="@p.Id"
+                                                class="btn btn-sm btn-outline-primary me-1">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        }
                                     </td>
                                 </tr>
                             }
@@ -149,17 +220,6 @@
 
 @section Scripts {
     <script>
-        console.log("🧩 Layout cargado:", "@Layout");
-        console.log("🧩 Bootstrap CSS:", document.querySelector('link[href*=\"bootstrap\"]')?.href);
-        console.log("🧩 Bootstrap JS:", typeof bootstrap !== "undefined" ? "OK ✅" : "NO ❌");
-        console.log("🧩 Iconos:", document.querySelector('link[href*=\"bootstrap-icons\"]')?.href);
-        console.log("🧩 Navbar existe:", document.querySelector('.navbar') ? "✅ Sí" : "❌ No");
-
-        window.addEventListener("load", () => {
-            console.log("✅ DOM completamente cargado");
-            const navbar = document.querySelector('.navbar');
-            if (!navbar) console.warn("⚠️ El layout no se está aplicando o el navbar no existe.");
-        });
+        console.log("✅ Página Pedidos cargada correctamente");
     </script>
 }
-    

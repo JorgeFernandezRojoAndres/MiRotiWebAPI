@@ -178,4 +178,5 @@ F:\Proyectos\MiRoti\obj\Debug\net9.0\refint\MiRoti.dll
 F:\Proyectos\MiRoti\obj\Debug\net9.0\MiRoti.pdb
 F:\Proyectos\MiRoti\obj\Debug\net9.0\MiRoti.genruntimeconfig.cache
 F:\Proyectos\MiRoti\obj\Debug\net9.0\ref\MiRoti.dll
-F:\Proyectos\MiRoti\obj\Debug\net9.0\compressed\l2czj4oukg-c8qb8s81xs.gz
+F:\Proyectos\MiRoti\bin\Debug\net9.0\structure.json
+F:\Proyectos\MiRoti\obj\Debug\net9.0\compressed\l2czj4oukg-cy8g3jiij7.gz

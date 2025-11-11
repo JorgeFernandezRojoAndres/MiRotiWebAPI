@@ -20,7 +20,7 @@ namespace MiRoti.Services
             _config = config;
         }
 
-        // 🔐 LOGIN real (antes era simulado)
+        // 🔐 LOGIN real (verifica usuario y contraseña)
         public async Task<string?> AutenticarAsync(string email, string contrasenia)
         {
             // Buscar usuario por email
@@ -53,8 +53,8 @@ namespace MiRoti.Services
             return usuario;
         }
 
-        // 🔧 Generador de token JWT con claims
-        private string GenerarToken(Usuario user)
+        // 🔧 Generador de token JWT con claims válidos para [Authorize(Roles = ...)]
+        public string GenerarToken(Usuario user)
         {
             var jwtKey = _config["Jwt:Key"]!;
             var jwtIssuer = _config["Jwt:Issuer"]!;
@@ -63,11 +63,12 @@ namespace MiRoti.Services
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
+            // ✅ Claims: usar ClaimTypes.Role para que ASP.NET reconozca los roles
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                 new Claim("id", user.Id.ToString()),
-                new Claim("rol", user.Rol),
+                new Claim(ClaimTypes.Role, user.Rol), // 🔹 CORREGIDO (antes era "rol")
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 

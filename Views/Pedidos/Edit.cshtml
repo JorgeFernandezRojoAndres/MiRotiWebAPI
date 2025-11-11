@@ -1,4 +1,5 @@
 @model MiRoti.Models.Pedido
+
 @{
     ViewData["Title"] = "Editar Pedido";
     var clientes = ViewData["Clientes"] as List<MiRoti.Models.Cliente>;
@@ -11,43 +12,76 @@
     <form asp-action="Edit" method="post">
         <input type="hidden" asp-for="Id" />
 
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <label asp-for="ClienteId" class="form-label fw-semibold">Cliente</label>
-                <select asp-for="ClienteId" class="form-select">
-                    @foreach (var c in clientes!)
-                    {
-                        <option value="@c.Id" selected="@(Model.ClienteId == c.Id)">
-                            @c.Nombre
-                        </option>
-                    }
-                </select>
-            </div>
-
-            <div class="col-md-6">
-                <label asp-for="CadeteId" class="form-label fw-semibold">Cadete</label>
-                <select asp-for="CadeteId" class="form-select">
-                    <option value="">-- Sin asignar --</option>
-                    @foreach (var cad in cadetes!)
-                    {
-                        <option value="@cad.Id" selected="@(Model.CadeteId == cad.Id)">
-                            @cad.Nombre
-                        </option>
-                    }
-                </select>
-            </div>
-        </div>
-
-        <div class="mb-3">
-            <label asp-for="Estado" class="form-label fw-semibold">Estado</label>
-            <select asp-for="Estado" class="form-select">
-                <option> Pendiente </option>
-                <option> En Preparación </option>
-                <option> En Camino </option>
-                <option> Completado </option>
+        <!-- Selección de Cliente -->
+        <div class="col-md-6">
+            <label asp-for="ClienteId" class="form-label fw-semibold">Cliente</label>
+            <select asp-for="ClienteId" class="form-select">
+                @foreach (var c in clientes!)
+                {
+                    <option value="@c.Id" selected="@((Model.ClienteId == c.Id) ? "selected" : "")">
+                        @c.Nombre
+                    </option>
+                }
             </select>
         </div>
 
+        <!-- Selección de Cadete -->
+        <div class="col-md-6">
+            <label asp-for="CadeteId" class="form-label fw-semibold">Cadete</label>
+            <select asp-for="CadeteId" class="form-select">
+                <option value="">-- Sin asignar --</option>
+                @foreach (var cad in cadetes!)
+                {
+                    <option value="@cad.Id" selected="@((Model.CadeteId == cad.Id) ? "selected" : "")">
+                        @cad.Nombre
+                    </option>
+                }
+            </select>
+        </div>
+
+        <!-- Selección de Estado -->
+        <div class="mb-3">
+            <label asp-for="Estado" class="form-label fw-semibold">Estado</label>
+            <select asp-for="Estado" class="form-select">
+                @if (Model.Estado == "Pendiente")
+                {
+                    <option value="Pendiente" selected>Pendiente</option>
+                }
+                else
+                {
+                    <option value="Pendiente">Pendiente</option>
+                }
+
+                @if (Model.Estado == "En Preparación")
+                {
+                    <option value="En Preparación" selected>En Preparación</option>
+                }
+                else
+                {
+                    <option value="En Preparación">En Preparación</option>
+                }
+
+                @if (Model.Estado == "En Camino")
+                {
+                    <option value="En Camino" selected>En Camino</option>
+                }
+                else
+                {
+                    <option value="En Camino">En Camino</option>
+                }
+
+                @if (Model.Estado == "Completado")
+                {
+                    <option value="Completado" selected>Completado</option>
+                }
+                else
+                {
+                    <option value="Completado">Completado</option>
+                }
+            </select>
+        </div>
+
+        <!-- Detalles del Pedido -->
         <div class="card shadow-sm border-0 mt-4">
             <div class="card-header bg-light fw-semibold">
                 Detalles del Pedido
@@ -87,6 +121,10 @@
             </div>
         </div>
 
+        <!-- Errores de validación -->
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger mt-3"></div>
+
+        <!-- Botones de acción -->
         <div class="mt-4 d-flex justify-content-between">
             <a asp-action="Index" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Volver

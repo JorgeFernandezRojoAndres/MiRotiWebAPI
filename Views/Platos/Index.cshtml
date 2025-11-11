@@ -2,18 +2,43 @@
 
 @{
     ViewData["Title"] = "Gestión de Platos";
-    var activos = Model.Count(p => p.Disponible);
-    var inactivos = Model.Count(p => !p.Disponible);
-    var margenPromedio = Model.Any() ? Model.Average(p => (double)((p.PrecioVenta - p.CostoTotal) / p.PrecioVenta) * 100) : 0;
+    var activos = ViewData["Activos"];
+    var inactivos = ViewData["Inactivos"];
+    var margenPromedio = ViewData["MargenPromedio"];
 }
 
 <div class="container mt-4">
+
+    <!-- 🔔 Alertas de acción -->
+    @if (TempData["Info"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show mt-2" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["Info"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mt-2" role="alert">
+            <i class="bi bi-x-circle-fill me-2"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold">Gestión de Platos</h2>
-        <a asp-action="Create" class="btn btn-warning fw-semibold text-white">
+
+        <!-- 🔹 Botón para gestionar pedidos -->
+        <a href="@Url.Action("Index", "Pedidos")" class="btn btn-info fw-semibold text-white shadow-sm">
+            <i class="bi bi-box-arrow-in-right me-2"></i> Gestionar Pedidos
+        </a>
+
+        <a asp-controller="Platos" asp-action="Create" class="btn btn-warning fw-semibold text-white shadow-sm">
             <i class="bi bi-plus-lg"></i> Agregar Plato Nuevo
         </a>
     </div>
+
     <p class="text-muted">Crear, editar y gestionar el menú</p>
 
     <!-- 🔹 Métricas -->
@@ -45,7 +70,8 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <p class="mb-1 fw-semibold">Margen Promedio</p>
-                        <h4>@margenPromedio.ToString("0.0")%</h4>
+                        <h4>@((Convert.ToDouble(margenPromedio ?? 0)).ToString("0.0"))%</h4>
+
                     </div>
                     <i class="bi bi-cash-coin fs-3 text-warning"></i>
                 </div>
@@ -84,19 +110,20 @@
                             var ganancia = p.PrecioVenta - p.CostoTotal;
                             var margen = p.PrecioVenta > 0 ? (ganancia / p.PrecioVenta) * 100 : 0;
 
-                            <tr>
+                            <!-- 🔸 Fila gris si está inactivo -->
+                            <tr class="@(p.Disponible ? "" : "table-secondary text-muted")" style="@(p.Disponible ? "" : "opacity: 0.8;")">
+
                                 <!-- 🔹 Foto + nombre -->
                                 <td class="d-flex align-items-center">
                                     @if (!string.IsNullOrEmpty(p.ImagenUrl))
                                     {
-                                        <img src="@p.ImagenUrl" alt="@p.Nombre"
-                                             class="rounded me-2"
-                                             style="width: 50px; height: 50px; object-fit: cover; border: 1px solid #ddd;" />
+                                        <img src="@p.ImagenUrl" alt="@p.Nombre" class="rounded me-2"
+                                            style="width: 50px; height: 50px; object-fit: cover; border: 1px solid #ddd;" />
                                     }
                                     else
                                     {
                                         <div class="d-flex align-items-center justify-content-center bg-light rounded me-2"
-                                             style="width: 50px; height: 50px; border: 1px solid #ddd;">
+                                            style="width: 50px; height: 50px; border: 1px solid #ddd;">
                                             <i class="bi bi-image text-muted"></i>
                                         </div>
                                     }
@@ -120,15 +147,31 @@
                                 </td>
 
                                 <td>
-                                    <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary me-1">
+                                    <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary me-1" title="Editar">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-outline-secondary me-1">
+                                    <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-outline-secondary me-1" title="Ver detalles">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a asp-action="Delete" asp-route-id="@p.Id" class="btn btn-sm btn-outline-danger">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
+
+                                    <!-- 🔸 Botón "Desactivar" en lugar de eliminar -->
+                                    @if (p.Disponible)
+                                    {
+                                        <a asp-action="Delete" asp-route-id="@p.Id"
+                                           class="btn btn-sm btn-outline-danger"
+                                           title="Marcar como inactivo">
+                                            <i class="bi bi-pause-circle"></i>
+                                        </a>
+                                    }
+                                    else
+{
+    <form asp-action="Reactivar" asp-route-id="@p.Id" method="post" style="display:inline;">
+        <button type="submit" class="btn btn-sm btn-outline-success" title="Reactivar plato">
+            <i class="bi bi-arrow-repeat"></i>
+        </button>
+    </form>
+}
+
                                 </td>
                             </tr>
                         }
