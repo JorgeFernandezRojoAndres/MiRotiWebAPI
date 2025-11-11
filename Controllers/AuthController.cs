@@ -1,12 +1,12 @@
-using Microsoft.AspNetCore.Mvc; 
-using MiRoti.Data; 
-using MiRoti.Models; 
-using MiRoti.Services; 
-using Microsoft.AspNetCore.Http; 
-using Microsoft.EntityFrameworkCore; 
-using BCrypt.Net; 
-using System.Security.Claims; 
-using Microsoft.AspNetCore.Authentication; 
+using Microsoft.AspNetCore.Mvc;
+using MiRoti.Data;
+using MiRoti.Models;
+using MiRoti.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using BCrypt.Net;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace MiRoti.Controllers
@@ -36,20 +36,33 @@ namespace MiRoti.Controllers
         [Route("Auth/Login")]
         public async Task<IActionResult> Login(string email, string contrasenia)
         {
-            // Verificación de campos vacíos
+            Console.WriteLine($"🟡 Intentando iniciar sesión con email: {email}");
+
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(contrasenia))
             {
-                TempData["Error"] = "Debe ingresar un email y una contraseña.";
+                ViewBag.Error = "Debe ingresar un email y una contraseña.";
+                Console.WriteLine("⚠️ Campos vacíos detectados.");
                 return View("~/Views/Auth/Login.cshtml");
             }
 
             try
             {
-                // 🔹 Obtener usuario por email
+                // 🔹 Buscar usuario
                 var usuario = await GetUserByEmailAsync(email);
-                if (usuario == null || !BCrypt.Net.BCrypt.Verify(contrasenia, usuario.Contrasenia))
+                if (usuario == null)
                 {
-                    TempData["Error"] = "Email o contraseña incorrectos.";
+                    ViewBag.Error = "Usuario no encontrado.";
+                    Console.WriteLine($"❌ Usuario no encontrado para email: {email}");
+                    return View("~/Views/Auth/Login.cshtml");
+                }
+
+                // 🔹 Verificar contraseña
+                bool passwordValida = BCrypt.Net.BCrypt.Verify(contrasenia, usuario.Contrasenia);
+                Console.WriteLine($"🔐 Verificación de contraseña: {(passwordValida ? "OK" : "INCORRECTA")}");
+
+                if (!passwordValida)
+                {
+                    ViewBag.Error = "Email o contraseña incorrectos.";
                     return View("~/Views/Auth/Login.cshtml");
                 }
 
@@ -57,32 +70,36 @@ namespace MiRoti.Controllers
                 var token = await _authService.AutenticarAsync(email, contrasenia);
                 if (token == null)
                 {
-                    TempData["Error"] = "Error al generar el token.";
+                    ViewBag.Error = "Error al generar el token.";
+                    Console.WriteLine("❌ Error al generar token JWT.");
                     return View("~/Views/Auth/Login.cshtml");
                 }
 
-                // ✅ Guardar datos de sesión
-                HttpContext.Session.SetString("UsuarioNombre", usuario.Nombre);
-                HttpContext.Session.SetString("UsuarioRol", usuario.Rol);
+                // ✅ Guardar sesión
+                HttpContext.Session.SetString("UsuarioNombre", usuario.Nombre ?? "");
+                HttpContext.Session.SetString("UsuarioRol", usuario.Rol ?? "");
                 HttpContext.Session.SetString("TokenJWT", token);
+                Console.WriteLine($"✅ Sesión creada para {usuario.Nombre} ({usuario.Rol})");
 
-                // 🧩 Crear cookie de autenticación para MVC
+                // 🧩 Crear cookie de autenticación
                 var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, usuario.Nombre ?? usuario.Email),
-                    new Claim(ClaimTypes.Role, usuario.Rol ?? "Cliente")
-                };
+        {
+            new Claim(ClaimTypes.Name, usuario.Nombre ?? usuario.Email),
+            new Claim(ClaimTypes.Role, usuario.Rol ?? "Cliente")
+        };
 
                 var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var principal = new ClaimsPrincipal(identity);
 
                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, new AuthenticationProperties
                 {
-                    IsPersistent = true, // Mantiene sesión si cierra navegador
+                    IsPersistent = true,
                     ExpiresUtc = DateTime.UtcNow.AddHours(8)
                 });
 
-                // ✅ Redirigir según el rol
+                Console.WriteLine($"🚀 Login exitoso. Redirigiendo según rol: {usuario.Rol}");
+
+                // ✅ Redirigir según rol
                 return usuario.Rol switch
                 {
                     "Admin" => RedirectToAction("Index", "Analisis"),
@@ -93,10 +110,16 @@ namespace MiRoti.Controllers
             }
             catch (Exception ex)
             {
-                TempData["Error"] = $"Error al iniciar sesión: {ex.Message}";
+                // 🔹 Registrar detalle técnico en consola (útil para depurar)
+                Console.WriteLine($"❌ Excepción en Login: {ex}");
+
+                // 🔹 Mensaje genérico para el usuario
+                ViewBag.Error = "Ocurrió un problema al iniciar sesión. Intente nuevamente.";
                 return View("~/Views/Auth/Login.cshtml");
             }
+
         }
+
 
         // ✅ GET: /Auth/Register (solo si lo usas)
         [HttpGet]

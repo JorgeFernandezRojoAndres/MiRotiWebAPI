@@ -10,6 +10,7 @@ using MiRoti.Interfaces;
 using MiRoti.Repositories;
 using MiRoti.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -63,27 +64,40 @@ namespace MiRoti
             var jwtAudience = jwtSection["Audience"] ?? "MiRotiMobile";
 
             builder.Services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
-            {
-                options.RequireHttpsMetadata = false; // ⚙️ solo desarrollo
-                options.SaveToken = true; // ✅ guarda el token en contexto Http
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero, // ✅ elimina tolerancia horaria
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtIssuer,
-                    ValidAudience = jwtAudience,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
-                };
-            });
+ {
+     // ✅ El panel web usa Cookies por defecto
+     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+     options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+     options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+ })
+
+             // 🔹 Autenticación por cookies para el panel web
+             .AddCookie(options =>
+             {
+                 options.LoginPath = "/Auth/Login";
+                 options.LogoutPath = "/Auth/Logout";
+                 options.AccessDeniedPath = "/Auth/Login";
+                 options.ExpireTimeSpan = TimeSpan.FromHours(8);
+                 options.Cookie.SameSite = SameSiteMode.None;
+                 options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+             })
+             // 🔹 Autenticación por JWT para la app móvil
+             .AddJwtBearer(options =>
+             {
+                 options.RequireHttpsMetadata = false; // ⚙️ solo desarrollo
+                 options.SaveToken = true;
+                 options.TokenValidationParameters = new TokenValidationParameters
+                 {
+                     ValidateIssuer = true,
+                     ValidateAudience = true,
+                     ValidateLifetime = true,
+                     ClockSkew = TimeSpan.Zero,
+                     ValidateIssuerSigningKey = true,
+                     ValidIssuer = jwtIssuer,
+                     ValidAudience = jwtAudience,
+                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+                 };
+             });
 
             builder.Services.AddAuthorization();
 
@@ -117,7 +131,8 @@ namespace MiRoti
             app.UseRouting();
             app.UseSession();
 
-            app.UseAuthentication();  // 🔹 importante: antes que UseAuthorization
+            // 🔹 Orden correcto: primero autenticación, luego autorización
+            app.UseAuthentication();
             app.UseAuthorization();
 
             // ----------------------------
