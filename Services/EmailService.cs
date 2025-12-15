@@ -14,17 +14,24 @@ namespace MiRoti.Services
         // ✅ Enviar correo básico (asincrónico)
         public async Task EnviarCorreoAsync(string destino, string asunto, string cuerpo)
         {
-            using (var client = new SmtpClient(_smtp, _port))
+            try
             {
-                client.EnableSsl = true;
-                client.Credentials = new NetworkCredential(_from, _password);
-
-                var mail = new MailMessage(_from, destino, asunto, cuerpo)
+                using (var client = new SmtpClient(_smtp, _port))
                 {
-                    IsBodyHtml = true
-                };
+                    client.EnableSsl = true;
+                    client.Credentials = new NetworkCredential(_from, _password);
 
-                await client.SendMailAsync(mail);
+                    var mail = new MailMessage(_from, destino, asunto, cuerpo)
+                    {
+                        IsBodyHtml = true
+                    };
+
+                    await client.SendMailAsync(mail);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error enviando correo a '{destino}' via SMTP '{_smtp}:{_port}' desde '{_from}'.", ex);
             }
         }
     }

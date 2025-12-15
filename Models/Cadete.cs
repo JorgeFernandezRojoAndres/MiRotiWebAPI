@@ -10,6 +10,12 @@ namespace MiRoti.Models
         [MaxLength(50)]
         public string? MedioTransporte { get; set; }
 
+        [MaxLength(200)]
+        public string? Direccion { get; set; }
+
+        [MaxLength(20)]
+        public string? Telefono { get; set; }
+
         public ICollection<Pedido> Pedidos { get; set; } = new List<Pedido>();
     }
 }

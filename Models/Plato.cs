@@ -10,14 +10,18 @@ namespace MiRoti.Models
         [Key]
         public int Id { get; set; }
 
-        [Required, MaxLength(100)]
-        public string Nombre { get; set; } = string.Empty;
+        [Required(ErrorMessage = "El nombre es obligatorio.")]
+        [MinLength(1, ErrorMessage = "El nombre no puede estar vacío.")]
+        [MaxLength(100)]
+        public string Nombre { get; set; } = "";
 
         public string Descripcion { get; set; } = string.Empty;
 
+        [Range(1, double.MaxValue, ErrorMessage = "El precio de venta debe ser mayor a 0.")]
         [Column(TypeName = "decimal(10,2)")]
         public decimal PrecioVenta { get; set; }
 
+        [Range(1, double.MaxValue, ErrorMessage = "El costo total debe ser mayor a 0.")]
         [Column(TypeName = "decimal(10,2)")]
         public decimal CostoTotal { get; set; }
 

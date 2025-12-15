@@ -1,3 +1,4 @@
+using BCrypt.Net;
 using System.Linq;
 using MiRoti.Models;
 
@@ -29,8 +30,8 @@ namespace MiRoti.Data
             {
                 Nombre = "Administrador",
                 Email = "admin@miroti.com",
-                Contrasenia = "admin123",
-                Rol = "Administrador"
+                Contrasenia = BCrypt.Net.BCrypt.HashPassword("admin123"),
+                Rol = "Admin"
             };
             context.Usuarios.Add(admin);
 
@@ -39,7 +40,7 @@ namespace MiRoti.Data
             {
                 Nombre = "Chef Admin",
                 Email = "chef@miroti.com",
-                Contrasenia = "123456",
+                Contrasenia = BCrypt.Net.BCrypt.HashPassword("123456"),
                 Rol = "Cocinero",
                 Especialidad = "Comidas Caseras"
             };
@@ -50,7 +51,7 @@ namespace MiRoti.Data
             {
                 Nombre = "Juan Pérez",
                 Email = "juan@mail.com",
-                Contrasenia = "1234",
+                Contrasenia = BCrypt.Net.BCrypt.HashPassword("1234"),
                 Rol = "Cliente",
                 Direccion = "Av. Libertador 456",
                 Telefono = "2664000001"
@@ -59,7 +60,7 @@ namespace MiRoti.Data
             {
                 Nombre = "Ana García",
                 Email = "ana@mail.com",
-                Contrasenia = "1234",
+                Contrasenia = BCrypt.Net.BCrypt.HashPassword("1234"),
                 Rol = "Cliente",
                 Direccion = "San Martín 789",
                 Telefono = "2664000002"
@@ -71,9 +72,11 @@ namespace MiRoti.Data
             {
                 Nombre = "Pedro López",
                 Email = "pedro@mail.com",
-                Contrasenia = "1234",
+                Contrasenia = BCrypt.Net.BCrypt.HashPassword("1234"),
                 Rol = "Cadete",
-                MedioTransporte = "Moto"
+                MedioTransporte = "Moto",
+                Direccion = "Ruta 20 Km 5",
+                Telefono = "2664000003"
             };
             context.Cadetes.Add(cadete);
 

@@ -6,7 +6,9 @@
 <div class="container mt-4">
     <h2 class="fw-bold mb-4">Agregar Nuevo Plato</h2>
 
-    <form asp-action="Create" enctype="multipart/form-data">
+    <form asp-action="Create" enctype="multipart/form-data" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" id="ingredientesData" name="ingredientesData" />
         <div class="mb-3">
             <label class="form-label">Nombre</label>
             <input asp-for="Nombre" class="form-control" />
@@ -23,8 +25,44 @@
         </div>
 
         <div class="mb-3">
-            <label class="form-label">Costo Total</label>
-            <input asp-for="CostoTotal" class="form-control" type="number" step="0.01" />
+            <label class="form-label">Ingredientes del Plato</label>
+            <div id="ingredientesPlato">
+                <div class="row mb-2">
+                    <div class="col-5">
+                        <select class="form-select ingrediente-select" onchange="calcularSubtotal(this)">
+                            <option value="">Seleccione ingrediente</option>
+                        </select>
+                    </div>
+                    <div class="col-3">
+                        <input type="number" class="form-control cantidad-input" placeholder="Cantidad" step="0.01" min="0.01" oninput="calcularSubtotal(this)" />
+                    </div>
+                    <div class="col-3">
+                        <span class="form-control-plaintext subtotal-display">$0.00</span>
+                    </div>
+                    <div class="col-1">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="eliminarIngrediente(this)">×</button>
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn btn-success btn-sm" onclick="agregarIngrediente()">+ Agregar Ingrediente</button>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Mano de Obra (%)</label>
+            <input type="number" id="manoObra" name="manoObraPorcentaje" class="form-control" value="20" step="1" min="0" max="100" />
+            <div class="form-text">Porcentaje sobre el costo de ingredientes</div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Costo Total (Calculado)</label>
+            <input asp-for="CostoTotal" class="form-control" type="number" step="0.01" readonly style="background-color: #f8f9fa;" />
+            <div class="form-text">Se calcula automáticamente: Ingredientes + Mano de Obra</div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Costo Total (Manual - opcional)</label>
+            <input type="number" id="costoTotalManual" name="costoTotalManual" class="form-control" step="0.01" min="0" placeholder="Dejar vacío para calcular automáticamente" />
+            <div class="form-text">Si completás este campo, se usará este valor y no se recalculará el costo total.</div>
         </div>
 
         <div class="mb-3">
@@ -38,7 +76,7 @@
                  style="max-height: 250px; object-fit: cover;" />
         </div>
 
-        <button type="submit" class="btn btn-warning text-white">
+        <button type="submit" id="btnGuardarPlato" class="btn btn-warning text-white">
             <i class="bi bi-save"></i> Guardar Plato
         </button>
         <a asp-action="Index" class="btn btn-secondary ms-2">Cancelar</a>
@@ -64,6 +102,171 @@
                 preview.src = '#';
                 preview.classList.add('d-none');
             }
+        });
+
+        let todosLosIngredientes = [];
+
+        // Cargar ingredientes para los selects (sin verificación extra)
+        fetch('/api/ingredientes')
+            .then(r => r.json())
+            .then(ingredientes => {
+                todosLosIngredientes = ingredientes;
+                cargarIngredientesEnSelects();
+            })
+            .catch(error => console.error('Error:', error));
+
+        function cargarIngredientesEnSelects() {
+            document.querySelectorAll('.ingrediente-select').forEach(select => {
+                select.innerHTML = '<option value="">Seleccione ingrediente</option>';
+                if (todosLosIngredientes && todosLosIngredientes.length > 0) {
+                    todosLosIngredientes.forEach(ing => {
+                        const option = document.createElement('option');
+                        option.value = ing.id;
+                        option.setAttribute('data-costo', ing.costoUnitario);
+                        option.textContent = ing.nombre + ' ($' + ing.costoUnitario + ')';
+                        select.appendChild(option);
+                    });
+                }
+            });
+        }
+
+        // Agregar nuevo ingrediente
+        function agregarIngrediente() {
+            const container = document.getElementById('ingredientesPlato');
+            const newRow = document.createElement('div');
+            newRow.className = 'row mb-2';
+            newRow.innerHTML = `
+                <div class="col-5">
+                    <select class="form-select ingrediente-select" onchange="calcularSubtotal(this)">
+                        <option value="">Seleccione ingrediente</option>
+                    </select>
+                </div>
+                <div class="col-3">
+                    <input type="number" class="form-control cantidad-input" placeholder="Cantidad" step="0.01" min="0.01" oninput="calcularSubtotal(this)" />
+                </div>
+                <div class="col-3">
+                    <span class="form-control-plaintext subtotal-display">$0.00</span>
+                </div>
+                <div class="col-1">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="eliminarIngrediente(this)">×</button>
+                </div>
+            `;
+            container.appendChild(newRow);
+            
+            // Cargar ingredientes en el nuevo select
+            const newSelect = newRow.querySelector('.ingrediente-select');
+            newSelect.innerHTML = '<option value="">Seleccione ingrediente</option>';
+            todosLosIngredientes.forEach(ing => {
+                const option = document.createElement('option');
+                option.value = ing.id;
+                option.dataset.costo = ing.costoUnitario;
+                option.dataset.unidad = ing.unidadMedida?.abreviatura || '';
+                option.textContent = `${ing.nombre} ($${ing.costoUnitario}/${ing.unidadMedida?.abreviatura || 'u'})`;
+                newSelect.appendChild(option);
+            });
+        }
+
+        // Eliminar ingrediente
+        function eliminarIngrediente(btn) {
+            btn.closest('.row').remove();
+            calcularCostoTotal();
+        }
+
+        function calcularSubtotal(element) {
+            const row = element.closest('.row');
+            const select = row.querySelector('.ingrediente-select');
+            const cantidadInput = row.querySelector('.cantidad-input');
+            const subtotalDisplay = row.querySelector('.subtotal-display');
+            
+            const selectedOption = select.selectedOptions[0];
+            const cantidad = parseFloat(cantidadInput.value) || 0;
+            
+            if (selectedOption && selectedOption.value && cantidad > 0) {
+                const costo = parseFloat(selectedOption.getAttribute('data-costo')) || 0;
+                const subtotal = cantidad * costo;
+                subtotalDisplay.textContent = '$' + subtotal.toFixed(2);
+                console.log('Subtotal:', subtotal);
+            } else {
+                subtotalDisplay.textContent = '$0.00';
+            }
+            
+            calcularCostoTotal();
+        }
+
+        // Calcular costo total del plato
+        function calcularCostoTotal() {
+            const manualInput = document.getElementById('costoTotalManual');
+            const manualValue = parseFloat((manualInput?.value || '').toString().replace(',', '.'));
+            if (!Number.isNaN(manualValue) && manualValue > 0) {
+                document.querySelector('input[name="CostoTotal"]').value = manualValue.toFixed(2);
+                return;
+            }
+
+            let totalIngredientes = 0;
+            
+            document.querySelectorAll('.subtotal-display').forEach(display => {
+                const subtotal = parseFloat(display.textContent.replace('$', '')) || 0;
+                totalIngredientes += subtotal;
+                console.log('Subtotal encontrado:', subtotal);
+            });
+            
+            const manoObraPorcentaje = parseFloat(document.getElementById('manoObra').value) || 0;
+            const manoObraValor = totalIngredientes * (manoObraPorcentaje / 100);
+            const costoTotal = totalIngredientes + manoObraValor;
+            
+            console.log('Cálculo final:', {
+                totalIngredientes: totalIngredientes,
+                manoObraPorcentaje: manoObraPorcentaje,
+                manoObraValor: manoObraValor,
+                costoTotal: costoTotal
+            });
+            
+            document.querySelector('input[name="CostoTotal"]').value = costoTotal.toFixed(2);
+        }
+
+        // Event listener para mano de obra
+        document.getElementById('manoObra').addEventListener('input', calcularCostoTotal);
+
+        // Si el cocinero ingresa costo manual, se prioriza y se actualiza el campo calculado
+        document.getElementById('costoTotalManual').addEventListener('input', calcularCostoTotal);
+        
+        const form = document.querySelector('form');
+        const botonGuardar = document.getElementById('btnGuardarPlato');
+
+        // Unificar el envío (click o Enter) y evitar doble submit
+        form?.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            if (this.dataset.submitting === 'true') {
+                return;
+            }
+
+            this.dataset.submitting = 'true';
+            if (botonGuardar) {
+                botonGuardar.disabled = true;
+            }
+
+            calcularCostoTotal();
+
+            const ingredientes = [];
+            document.querySelectorAll('#ingredientesPlato .row').forEach(row => {
+                const select = row.querySelector('.ingrediente-select');
+                const cantidadInput = row.querySelector('.cantidad-input');
+                const subtotalDisplay = row.querySelector('.subtotal-display');
+
+                if (select && select.value && cantidadInput && cantidadInput.value) {
+                    ingredientes.push({
+                        ingredienteId: parseInt(select.value),
+                        cantidad: parseFloat(cantidadInput.value),
+                        subtotal: parseFloat(subtotalDisplay.textContent.replace('$', ''))
+                    });
+                }
+            });
+
+            document.getElementById('ingredientesData').value = JSON.stringify(ingredientes);
+
+            // Enviar realmente (submit nativo sin re-disparar el handler)
+            this.submit();
         });
     </script>
 }

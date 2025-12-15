@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test</title>
+</head>
+<body>
+    <h1>Test JavaScript</h1>
+    <button onclick="testFunction()">Click me</button>
+    <div id="result"></div>
+    
+    <script>
+        console.log('TEST: Script cargado');
+        
+        function testFunction() {
+            console.log('TEST: Función ejecutada');
+            document.getElementById('result').innerHTML = 'JavaScript funciona!';
+        }
+        
+        // Test fetch
+        fetch('/api/ingredientes')
+            .then(r => r.json())
+            .then(data => {
+                console.log('TEST: API funciona', data);
+                document.getElementById('result').innerHTML = 'API funciona: ' + data.length + ' ingredientes';
+            })
+            .catch(error => {
+                console.log('TEST: Error API', error);
+                document.getElementById('result').innerHTML = 'Error: ' + error;
+            });
+    </script>
+</body>
+</html>

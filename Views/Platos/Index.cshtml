@@ -5,6 +5,7 @@
     var activos = ViewData["Activos"];
     var inactivos = ViewData["Inactivos"];
     var margenPromedio = ViewData["MargenPromedio"];
+    var mostrarInactivos = (bool)(ViewData["MostrarInactivos"] ?? false);
 }
 
 <div class="container mt-4">
@@ -34,7 +35,15 @@
             <i class="bi bi-box-arrow-in-right me-2"></i> Gestionar Pedidos
         </a>
 
-        <a asp-controller="Platos" asp-action="Create" class="btn btn-warning fw-semibold text-white shadow-sm">
+        <form method="get" class="d-flex align-items-center gap-2">
+            <div class="form-check form-switch m-0">
+                <input class="form-check-input" type="checkbox" id="mostrarInactivos" name="mostrarInactivos" value="true"
+                       onchange="this.form.submit()" @(mostrarInactivos ? "checked" : "") />
+                <label class="form-check-label" for="mostrarInactivos">Mostrar inactivos</label>
+            </div>
+        </form>
+
+        <a asp-controller="Platos" asp-action="CreateSimple" class="btn btn-warning fw-semibold text-white shadow-sm">
             <i class="bi bi-plus-lg"></i> Agregar Plato Nuevo
         </a>
     </div>

@@ -144,6 +144,13 @@
                         </li>
 
                         <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Ingredientes" ? "active" : "")"
+                               asp-controller="Ingredientes" asp-action="Index">
+                                <i class="bi bi-basket3 me-1"></i> Ingredientes
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
                             <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Pedidos" ? "active" : "")"
                                asp-controller="Pedidos" asp-action="Index">
                                 <i class="bi bi-receipt-cutoff me-1"></i> Pedidos
@@ -163,6 +170,13 @@
                             <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Platos" ? "active" : "")"
                                asp-controller="Platos" asp-action="Index">
                                 <i class="bi bi-egg-fried me-1"></i> Platos
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Ingredientes" ? "active" : "")"
+                               asp-controller="Ingredientes" asp-action="Index">
+                                <i class="bi bi-basket3 me-1"></i> Ingredientes
                             </a>
                         </li>
                     }

@@ -21,21 +21,34 @@ namespace MiRoti
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+            builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
-            // ----------------------------
-            // 🔹 Conexión a MySQL
-            // ----------------------------
-            builder.Services.AddDbContext<MiRotiContext>(options =>
-                options.UseMySql(
-                    builder.Configuration.GetConnectionString("DefaultConnection"),
-                    new MySqlServerVersion(new Version(10, 4, 32))
-                )
-            );
+            if (builder.Environment.IsDevelopment())
+            {
+                builder.Services.AddDbContext<MiRotiContext>(options =>
+                    options.UseMySql(
+                        builder.Configuration.GetConnectionString("DefaultConnection"),
+                        new MySqlServerVersion(new Version(10, 4, 32))
+                    )
+                );
+            }
+            else
+            {
+                builder.Services.AddDbContext<MiRotiContext>(options =>
+                    options.UseNpgsql(
+                        builder.Configuration.GetConnectionString("DefaultConnection")
+                    )
+                );
+            }
 
             // ----------------------------
             // 🔹 MVC y Razor
             // ----------------------------
-            builder.Services.AddControllersWithViews();
+            builder.Services.AddControllersWithViews(options =>
+            {
+                options.ModelBinderProviders.Insert(0, new MiRoti.ModelBinders.InvariantDecimalModelBinderProvider());
+            });
             builder.Services.AddRazorPages();
             builder.Services.AddSession();
 
@@ -44,6 +57,27 @@ namespace MiRoti
             // ----------------------------
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            // ----------------------------
+            // 🌐 CORS para acceso desde red
+            // ----------------------------
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowLocalNetwork", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+
+                options.AddPolicy("AllowFrontend", policy =>
+                {
+                    policy.WithOrigins("https://your-frontend.com")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials();
+                });
+            });
 
             // ----------------------------
             // ✅ Inyección de dependencias
@@ -63,32 +97,39 @@ namespace MiRoti
             var jwtIssuer = jwtSection["Issuer"] ?? "MiRotiAPI";
             var jwtAudience = jwtSection["Audience"] ?? "MiRotiMobile";
 
+            // Esquema mixto: cookies para el panel y JWT para la API según el header Authorization
             builder.Services.AddAuthentication(options =>
             {
-                // ✅ El panel web usa Cookies por defecto
-                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultScheme = "AppScheme";
+                options.DefaultAuthenticateScheme = "AppScheme";
+                options.DefaultChallengeScheme = "AppScheme";
+            })
+            .AddPolicyScheme("AppScheme", "Cookie or JWT", options =>
+            {
+                options.ForwardDefaultSelector = context =>
+                    context.Request.Headers.ContainsKey("Authorization")
+                        ? JwtBearerDefaults.AuthenticationScheme
+                        : CookieAuthenticationDefaults.AuthenticationScheme;
             })
             // 🔹 Autenticación por cookies para el panel web
-            .AddCookie(options =>
+            .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
             {
                 options.LoginPath = "/Auth/Login";
                 options.LogoutPath = "/Auth/Logout";
                 options.AccessDeniedPath = "/Auth/Login";
                 options.ExpireTimeSpan = TimeSpan.FromHours(8);
-                options.Cookie.SameSite = SameSiteMode.None;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.Cookie.SameSite = SameSiteMode.Lax;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
             })
             // 🔹 Autenticación por JWT para la app móvil
-            .AddJwtBearer(options =>
+            .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
             {
                 options.RequireHttpsMetadata = false; // ⚙️ solo desarrollo
                 options.SaveToken = true;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
-                    ValidateAudience = true,
+                    ValidateAudience = false,
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero,
                     ValidateIssuerSigningKey = true,
@@ -125,24 +166,12 @@ namespace MiRoti
                 app.UseExceptionHandler("/Home/Error");
             }
 
-           
             app.UseStaticFiles();
+            app.UseCors("AllowFrontend");
             app.UseRouting();
             app.UseSession();
 
-            // 🔹 Interceptor para rutas API: evita redirección al login HTML
-            app.Use(async (context, next) =>
-            {
-                if (context.Request.Path.StartsWithSegments("/api") &&
-                    (context.User?.Identity?.IsAuthenticated != true))
-                {
-                    context.Response.StatusCode = 401; // Unauthorized
-                    await context.Response.WriteAsync("Unauthorized");
-                    return;
-                }
-
-                await next();
-            });
+            // Autenticacion y autorizacion
 
             // 🔹 Orden correcto: primero autenticación, luego autorización
             app.UseAuthentication();
@@ -165,6 +194,8 @@ namespace MiRoti
                 return Task.CompletedTask;
             });
 
+            app.MapGet("/health", () => Results.Ok("healthy"));
+
             // ----------------------------
             // 🧰 Generador de hashes (opcional)
             // ----------------------------
@@ -182,13 +213,6 @@ namespace MiRoti
                 Console.WriteLine("\n💡 Copiá los hashes y pegá en tu base con UPDATE Usuario ...");
                 return;
             }
-
-            // ----------------------------
-            // 🌍 Direcciones LAN
-            // ----------------------------
-            app.Urls.Clear();
-            app.Urls.Add("http://192.168.1.35:5000");
-            
 
             // ----------------------------
             // ▶️ Ejecutar

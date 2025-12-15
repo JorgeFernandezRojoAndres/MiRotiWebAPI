@@ -34,11 +34,7 @@ namespace MiRoti.ControllersApi
                 })
                 .ToListAsync();
 
-            if (platos == null || !platos.Any())
-            {
-                return NotFound(new { mensaje = "No hay platos disponibles." });
-            }
-
+            // Para el frontend, una lista vacía es un resultado válido (permite limpiar estado sin tratarlo como error).
             return Ok(platos);
         }
 

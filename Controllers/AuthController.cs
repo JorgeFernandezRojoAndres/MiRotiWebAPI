@@ -1,10 +1,10 @@
+using System;
 using Microsoft.AspNetCore.Mvc;
 using MiRoti.Data;
 using MiRoti.Models;
 using MiRoti.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using BCrypt.Net;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -22,7 +22,6 @@ namespace MiRoti.Controllers
             _authService = authService;
         }
 
-        // ✅ GET: /Auth/Login
         [HttpGet]
         [Route("Auth/Login")]
         public IActionResult Login()
@@ -30,63 +29,60 @@ namespace MiRoti.Controllers
             return View("~/Views/Auth/Login.cshtml");
         }
 
-        // ✅ POST: /Auth/Login (BCrypt + JWT + Cookie)
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         [Route("Auth/Login")]
         public async Task<IActionResult> Login(string email, string contrasenia)
         {
-            Console.WriteLine($"🟡 Intentando iniciar sesión con email: {email}");
+            Console.WriteLine($"Intentando iniciar sesion con email: {email}");
 
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(contrasenia))
             {
-                ViewBag.Error = "Debe ingresar un email y una contraseña.";
-                Console.WriteLine("⚠️ Campos vacíos detectados.");
+                ViewBag.Error = "Debe ingresar un email y una contrasenia.";
+                Console.WriteLine("Campos vacios detectados.");
                 return View("~/Views/Auth/Login.cshtml");
             }
 
             try
             {
-                // 🔹 Buscar usuario
                 var usuario = await GetUserByEmailAsync(email);
                 if (usuario == null)
                 {
                     ViewBag.Error = "Usuario no encontrado.";
-                    Console.WriteLine($"❌ Usuario no encontrado para email: {email}");
+                    Console.WriteLine($"Usuario no encontrado para email: {email}");
                     return View("~/Views/Auth/Login.cshtml");
                 }
 
-                // 🔹 Verificar contraseña
                 bool passwordValida = BCrypt.Net.BCrypt.Verify(contrasenia, usuario.Contrasenia);
-                Console.WriteLine($"🔐 Verificación de contraseña: {(passwordValida ? "OK" : "INCORRECTA")}");
+                Console.WriteLine($"Verificacion de contrasenia: {(passwordValida ? "OK" : "INCORRECTA")}");
 
                 if (!passwordValida)
                 {
-                    ViewBag.Error = "Email o contraseña incorrectos.";
+                    ViewBag.Error = "Email o contrasenia incorrectos.";
                     return View("~/Views/Auth/Login.cshtml");
                 }
 
-                // ✅ Generar token JWT
                 var token = await _authService.AutenticarAsync(email, contrasenia);
                 if (token == null)
                 {
                     ViewBag.Error = "Error al generar el token.";
-                    Console.WriteLine("❌ Error al generar token JWT.");
+                    Console.WriteLine("Error al generar token JWT.");
                     return View("~/Views/Auth/Login.cshtml");
                 }
 
-                // ✅ Guardar sesión
-                HttpContext.Session.SetString("UsuarioNombre", usuario.Nombre ?? "");
-                HttpContext.Session.SetString("UsuarioRol", usuario.Rol ?? "");
-                HttpContext.Session.SetString("TokenJWT", token);
-                Console.WriteLine($"✅ Sesión creada para {usuario.Nombre} ({usuario.Rol})");
+                var rolNormalizado = NormalizarRol(usuario.Rol);
 
-                // 🧩 Crear cookie de autenticación
+                HttpContext.Session.SetString("UsuarioNombre", usuario.Nombre ?? "");
+                HttpContext.Session.SetString("UsuarioRol", rolNormalizado);
+                HttpContext.Session.SetString("TokenJWT", token);
+                Console.WriteLine($"Sesion creada para {usuario.Nombre} ({rolNormalizado})");
+
                 var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name, usuario.Nombre ?? usuario.Email),
-            new Claim(ClaimTypes.Role, usuario.Rol ?? "Cliente")
-        };
+                {
+                    new Claim(ClaimTypes.Name, usuario.Nombre ?? usuario.Email),
+                    new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+                    new Claim(ClaimTypes.Role, rolNormalizado)
+                };
 
                 var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var principal = new ClaimsPrincipal(identity);
@@ -97,31 +93,24 @@ namespace MiRoti.Controllers
                     ExpiresUtc = DateTime.UtcNow.AddHours(8)
                 });
 
-                Console.WriteLine($"🚀 Login exitoso. Redirigiendo según rol: {usuario.Rol}");
+                Console.WriteLine($"Login exitoso. Redirigiendo segun rol: {rolNormalizado}");
 
-                // ✅ Redirigir según rol
-                return usuario.Rol switch
+                return rolNormalizado switch
                 {
                     "Admin" => RedirectToAction("Index", "Analisis"),
                     "Cocinero" => RedirectToAction("Index", "Platos"),
-                    "Cadete" or "Cliente" => RedirectToAction("Login", "Auth", new { errorMessage = "📱 Este acceso es solo para el panel web. Ingresá desde la app móvil." }),
+                    "Cadete" or "Cliente" => RedirectToAction("Login", "Auth", new { errorMessage = "Este acceso es solo para el panel web. Ingrese desde la app movil." }),
                     _ => RedirectToAction("Login", "Auth", new { errorMessage = "Rol no reconocido. Contacte al administrador." })
                 };
             }
             catch (Exception ex)
             {
-                // 🔹 Registrar detalle técnico en consola (útil para depurar)
-                Console.WriteLine($"❌ Excepción en Login: {ex}");
-
-                // 🔹 Mensaje genérico para el usuario
-                ViewBag.Error = "Ocurrió un problema al iniciar sesión. Intente nuevamente.";
+                Console.WriteLine($"Excepcion en Login: {ex}");
+                ViewBag.Error = "Ocurrio un problema al iniciar sesion. Intente nuevamente.";
                 return View("~/Views/Auth/Login.cshtml");
             }
-
         }
 
-
-        // ✅ GET: /Auth/Register (solo si lo usas)
         [HttpGet]
         [Route("Auth/Register")]
         public IActionResult Register()
@@ -129,7 +118,6 @@ namespace MiRoti.Controllers
             return View("~/Views/Auth/Register.cshtml");
         }
 
-        // ✅ POST: /Auth/Register (con hash)
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("Auth/Register")]
@@ -141,33 +129,42 @@ namespace MiRoti.Controllers
                 return View("~/Views/Auth/Register.cshtml");
             }
 
+            usuario.Rol = NormalizarRol(usuario.Rol);
+
             try
             {
                 await _authService.RegistrarAsync(usuario);
-                TempData["MensajeExito"] = "✅ Usuario registrado correctamente.";
+                TempData["MensajeExito"] = "Usuario registrado correctamente.";
                 return RedirectToAction("Login", "Auth");
             }
             catch (Exception ex)
             {
-                TempData["Error"] = $"❌ Error: {ex.Message}";
+                TempData["Error"] = $"Error: {ex.Message}";
                 return View("~/Views/Auth/Register.cshtml");
             }
         }
 
-        // ✅ GET: /Auth/Logout
         [HttpGet]
         [Route("Auth/Logout")]
         public async Task<IActionResult> Logout()
         {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme); // Cierra cookie de autenticación
-            HttpContext.Session.Clear(); // Limpia la sesión
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            HttpContext.Session.Clear();
             return RedirectToAction("Login", "Auth");
         }
 
-        // 🔹 Método para obtener usuario por email
         private async Task<Usuario?> GetUserByEmailAsync(string email)
         {
             return await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
+        }
+
+        private static string NormalizarRol(string? rol)
+        {
+            if (string.IsNullOrWhiteSpace(rol))
+                return "Cliente";
+
+            var limpio = rol.Trim();
+            return limpio.Equals("Administrador", StringComparison.OrdinalIgnoreCase) ? "Admin" : limpio;
         }
     }
 }

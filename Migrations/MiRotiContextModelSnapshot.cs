@@ -239,11 +239,26 @@ namespace MiRoti.Migrations
                 {
                     b.HasBaseType("MiRoti.Models.Usuario");
 
+                    b.Property<string>("Direccion")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
                     b.Property<string>("MedioTransporte")
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
-                    b.ToTable("Usuario");
+                    b.Property<string>("Telefono")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.ToTable("Usuario", t =>
+                        {
+                            t.Property("Direccion")
+                                .HasColumnName("Cadete_Direccion");
+
+                            t.Property("Telefono")
+                                .HasColumnName("Cadete_Telefono");
+                        });
 
                     b.HasDiscriminator().HasValue("Cadete");
                 });

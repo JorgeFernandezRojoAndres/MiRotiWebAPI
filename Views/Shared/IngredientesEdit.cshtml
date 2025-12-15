@@ -1,0 +1,61 @@
+@model MiRoti.Models.Ingrediente
+
+@{
+    ViewData["Title"] = "Actualizar Precio";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">💰 Actualizar Precio de Ingrediente</h3>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Ingrediente:</strong></label>
+                            <p class="form-control-plaintext fs-5">@Model.Nombre</p>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Unidad de Medida:</strong></label>
+                            <p class="form-control-plaintext">@Model.UnidadMedida.Nombre (@Model.UnidadMedida.Abreviatura)</p>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Precio Actual:</strong></label>
+                            <p class="form-control-plaintext text-success fs-5">$@Model.CostoUnitario.ToString("N2")</p>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="costoUnitario" class="form-label"><strong>Nuevo Precio:</strong></label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="costoUnitario" 
+                                       name="costoUnitario" 
+                                       value="@Model.CostoUnitario" 
+                                       step="0.01" 
+                                       min="0.01" 
+                                       required />
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a asp-action="Index" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Actualizar Precio
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

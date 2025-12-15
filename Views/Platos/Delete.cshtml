@@ -1,15 +1,15 @@
 @model MiRoti.Models.Plato
 @{
-    ViewData["Title"] = "Eliminar Plato";
+    ViewData["Title"] = "Desactivar Plato";
 }
 
 <div class="container mt-5">
     <div class="card shadow-sm border-0">
         <div class="card-body text-center">
             <h3 class="fw-bold text-danger mb-3">
-                <i class="bi bi-trash3-fill me-2"></i> Eliminar Plato
+                <i class="bi bi-pause-circle-fill me-2"></i> Desactivar Plato
             </h3>
-            <p class="text-muted">¿Estás seguro de que deseas eliminar este plato?</p>
+            <p class="text-muted">¿Estás seguro de que deseas desactivar este plato?</p>
 
             <hr />
 
@@ -51,7 +51,7 @@
                 <input type="hidden" asp-for="Id" />
 
                 <button type="submit" class="btn btn-danger">
-                    <i class="bi bi-trash3"></i> Confirmar Eliminación
+                    <i class="bi bi-pause-circle"></i> Confirmar Desactivación
                 </button>
                 <a asp-action="Index" class="btn btn-secondary ms-2">
                     <i class="bi bi-x-circle"></i> Cancelar

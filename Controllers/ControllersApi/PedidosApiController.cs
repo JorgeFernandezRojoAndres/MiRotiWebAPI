@@ -4,13 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using MiRoti.Data;
 using MiRoti.Models;
 using MiRoti.DTOs;
+using System;
 using System.Linq;
 using System.Security.Claims;
 
 namespace MiRoti.ControllersApi
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/pedidos")]
     [Authorize] // 🔐 Protege todas las rutas (requiere token JWT)
     public class PedidosApiController : ControllerBase
     {
@@ -19,6 +20,20 @@ namespace MiRoti.ControllersApi
         public PedidosApiController(MiRotiContext context)
         {
             _context = context;
+        }
+
+        // DTOs para crear pedido sin requerir la entidad completa
+        public class DetalleCreateDto
+        {
+            public int PlatoId { get; set; }
+            public int Cantidad { get; set; }
+            public decimal Subtotal { get; set; }
+        }
+
+        public class PedidoCreateDto
+        {
+            public decimal Total { get; set; }
+            public List<DetalleCreateDto> Detalles { get; set; } = new();
         }
 
         // ===========================================================
@@ -46,6 +61,8 @@ namespace MiRoti.ControllersApi
                         Plato = d.Plato.Nombre,
                         Cantidad = d.Cantidad,
                         Subtotal = d.Subtotal
+                        ,
+                        ImagenUrl = d.Plato != null ? d.Plato.ImagenUrl ?? "" : ""
                     }).ToList()
                 })
                 .OrderByDescending(p => p.FechaHora)
@@ -59,25 +76,43 @@ namespace MiRoti.ControllersApi
         // ===========================================================
         [HttpPost]
         [Authorize(Roles = "Cliente")]
-        public async Task<IActionResult> PostPedido([FromBody] Pedido pedido)
+        public async Task<IActionResult> PostPedido([FromBody] PedidoCreateDto pedidoDto)
         {
             try
             {
-                // 🧩 Obtener el ID del cliente autenticado
-                var clienteIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (clienteIdStr == null)
+                // 🧩 Obtener el ID del cliente autenticado (claim "id" o NameIdentifier)
+                var clienteIdStr = User.FindFirstValue("id") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrWhiteSpace(clienteIdStr) || !int.TryParse(clienteIdStr, out var clienteId))
                     return Unauthorized(new { success = false, error = "No se pudo obtener el identificador del cliente." });
-                var clienteId = int.Parse(clienteIdStr);
 
-                pedido.ClienteId = clienteId;
-                pedido.Estado = "Nuevo";
-                pedido.FechaHora = DateTime.Now;
+                // Asegurar que no haya pedidos activos y reemplazar el último si existe
+                var estadosActivos = new[] { "Pendiente", "En Preparación", "En Camino" };
+                var tienePedidoActivo = await _context.Pedidos
+                    .AnyAsync(p => p.ClienteId == clienteId && estadosActivos.Contains(p.Estado));
+
+                if (tienePedidoActivo)
+                    return Conflict(new { success = false, error = "Ya existe un pedido activo" });
+
+                var pedido = new Pedido
+                {
+                    ClienteId = clienteId,
+                    Cliente = null!,
+                    Estado = "Pendiente",
+                    FechaHora = DateTime.Now,
+                    Total = pedidoDto.Total,
+                    Detalles = (pedidoDto.Detalles ?? new()).Select(d => new DetallePedido
+                    {
+                        PlatoId = d.PlatoId,
+                        Cantidad = d.Cantidad,
+                        Subtotal = d.Subtotal
+                    }).ToList()
+                };
 
                 _context.Pedidos.Add(pedido);
                 await _context.SaveChangesAsync();
 
                 // 🔁 Devolver DTO del pedido recién creado
-                var pedidoDto = await _context.Pedidos
+                var pedidoResult = await _context.Pedidos
                     .Include(p => p.Cliente)
                     .Include(p => p.Detalles)
                         .ThenInclude(d => d.Plato)
@@ -94,11 +129,13 @@ namespace MiRoti.ControllersApi
                             Plato = d.Plato.Nombre,
                             Cantidad = d.Cantidad,
                             Subtotal = d.Subtotal
+                            ,
+                            ImagenUrl = d.Plato != null ? d.Plato.ImagenUrl ?? "" : ""
                         }).ToList()
                     })
                     .FirstOrDefaultAsync();
 
-                return CreatedAtAction(nameof(GetPedidoById), new { id = pedido.Id }, pedidoDto);
+                return CreatedAtAction(nameof(GetPedidoById), new { id = pedido.Id }, pedidoResult);
             }
             catch (Exception ex)
             {
@@ -147,10 +184,9 @@ namespace MiRoti.ControllersApi
         [Authorize(Roles = "Cliente")]
         public async Task<IActionResult> GetMisPedidos()
         {
-            var clienteIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (clienteIdStr == null)
+            var clienteIdStr = User.FindFirstValue("id") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(clienteIdStr) || !int.TryParse(clienteIdStr, out var clienteId))
                 return Unauthorized(new { success = false, error = "No se pudo obtener el identificador del cliente." });
-            var clienteId = int.Parse(clienteIdStr);
 
             var pedidos = await _context.Pedidos
                 .Where(p => p.ClienteId == clienteId)
@@ -168,6 +204,8 @@ namespace MiRoti.ControllersApi
                         Plato = d.Plato.Nombre,
                         Cantidad = d.Cantidad,
                         Subtotal = d.Subtotal
+                        ,
+                        ImagenUrl = d.Plato != null ? d.Plato.ImagenUrl ?? "" : ""
                     }).ToList()
                 })
                 .ToListAsync();
@@ -182,10 +220,9 @@ namespace MiRoti.ControllersApi
         [Authorize(Roles = "Cadete")]
         public async Task<IActionResult> GetPedidosAsignados()
         {
-            var cadeteIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (cadeteIdStr == null)
+            var cadeteIdStr = User.FindFirstValue("id") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(cadeteIdStr) || !int.TryParse(cadeteIdStr, out var cadeteId))
                 return Unauthorized(new { success = false, error = "No se pudo obtener el identificador del cadete." });
-            var cadeteId = int.Parse(cadeteIdStr);
 
             var pedidos = await _context.Pedidos
                 .Where(p => p.CadeteId == cadeteId && p.Estado != "Entregado")
@@ -219,10 +256,9 @@ namespace MiRoti.ControllersApi
         [Authorize(Roles = "Cadete")]
         public async Task<IActionResult> EntregarPedido(int id)
         {
-            var cadeteIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (cadeteIdStr == null)
+            var cadeteIdStr = User.FindFirstValue("id") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(cadeteIdStr) || !int.TryParse(cadeteIdStr, out var cadeteId))
                 return Unauthorized(new { success = false, error = "No se pudo obtener el identificador del cadete." });
-            var cadeteId = int.Parse(cadeteIdStr);
             var pedido = await _context.Pedidos.FirstOrDefaultAsync(p => p.Id == id && p.CadeteId == cadeteId);
 
             if (pedido == null)
@@ -241,17 +277,23 @@ namespace MiRoti.ControllersApi
         // ✅ PUT: api/pedidos/{id}/estado (Admin o Cocinero)
         // ===========================================================
         [HttpPut("{id}/estado")]
-        [Authorize(Roles = "Admin,Cocinero")]
+        [Authorize(Roles = "Admin,Cocinero,Cadete")]
         public async Task<IActionResult> CambiarEstado(int id, [FromBody] string nuevoEstado)
         {
-            var pedido = await _context.Pedidos.FindAsync(id);
+            var nuevoEstadoTrimmed = (nuevoEstado?.Trim()) ?? string.Empty;
+
+            var pedido = await _context.Pedidos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == id);
+
             if (pedido == null)
                 return NotFound();
 
-            pedido.Estado = nuevoEstado;
+            pedido.Estado = nuevoEstadoTrimmed;
+            _context.Pedidos.Update(pedido);
             await _context.SaveChangesAsync();
 
-            return Ok(new { success = true, mensaje = $"Estado actualizado a {nuevoEstado}" });
+            return Ok(new { success = true, mensaje = $"Estado actualizado a {nuevoEstadoTrimmed}" });
         }
     }
 }

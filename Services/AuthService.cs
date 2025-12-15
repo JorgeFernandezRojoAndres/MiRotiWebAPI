@@ -1,3 +1,4 @@
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -20,32 +21,36 @@ namespace MiRoti.Services
             _config = config;
         }
 
-        // 🔐 LOGIN real (verifica usuario y contraseña)
         public async Task<string?> AutenticarAsync(string email, string contrasenia)
         {
-            // Buscar usuario por email
             var user = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
 
             if (user == null)
                 return null;
 
-            // Validar contraseña con BCrypt
-            bool esValido = BCrypt.Net.BCrypt.Verify(contrasenia, user.Contrasenia);
+            var hashGuardado = user.Contrasenia;
+            bool esValido = BCrypt.Net.BCrypt.Verify(contrasenia, hashGuardado);
+
+            // Si la contraseña se guardó en texto plano (semilla vieja), permitirla y rehashear
+            if (!esValido && string.Equals(hashGuardado, contrasenia, StringComparison.Ordinal))
+            {
+                esValido = true;
+                user.Contrasenia = BCrypt.Net.BCrypt.HashPassword(contrasenia);
+                await _context.SaveChangesAsync();
+            }
+
             if (!esValido)
                 return null;
 
-            // Generar token JWT
             var token = GenerarToken(user);
             return token;
         }
 
-        // 🧩 Registrar nuevo usuario (opcional)
         public async Task<Usuario> RegistrarAsync(Usuario usuario)
         {
             if (await _context.Usuarios.AnyAsync(u => u.Email == usuario.Email))
-                throw new Exception("El correo ya está registrado.");
+                throw new Exception("El correo ya esta registrado.");
 
-            // Hashear contraseña
             usuario.Contrasenia = BCrypt.Net.BCrypt.HashPassword(usuario.Contrasenia);
             _context.Usuarios.Add(usuario);
             await _context.SaveChangesAsync();
@@ -53,22 +58,24 @@ namespace MiRoti.Services
             return usuario;
         }
 
-        // 🔧 Generador de token JWT con claims válidos para [Authorize(Roles = ...)]
         public string GenerarToken(Usuario user)
         {
             var jwtKey = _config["Jwt:Key"]!;
-            var jwtIssuer = _config["Jwt:Issuer"]!;
-            var jwtAudience = _config["Jwt:Audience"]!;
+            // Mantener consistente con la validación configurada en Program.cs (defaults incluidos).
+            var jwtIssuer = _config["Jwt:Issuer"] ?? "MiRotiAPI";
+            var jwtAudience = _config["Jwt:Audience"] ?? "MiRotiMobile";
 
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-            // ✅ Claims: usar ClaimTypes.Role para que ASP.NET reconozca los roles
+            var rolNormalizado = NormalizarRol(user.Rol);
+
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim("id", user.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.Rol), // 🔹 CORREGIDO (antes era "rol")
+                new Claim(ClaimTypes.Role, rolNormalizado),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
@@ -81,6 +88,15 @@ namespace MiRoti.Services
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        private static string NormalizarRol(string? rol)
+        {
+            if (string.IsNullOrWhiteSpace(rol))
+                return "Cliente";
+
+            var limpio = rol.Trim();
+            return limpio.Equals("Administrador", StringComparison.OrdinalIgnoreCase) ? "Admin" : limpio;
         }
     }
 }
