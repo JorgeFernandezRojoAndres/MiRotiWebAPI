@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MiRoti.Models
 {
@@ -14,7 +13,7 @@ namespace MiRoti.Models
         public string? Direccion { get; set; }
 
         [MaxLength(20)]
-        public string? Telefono { get; set; }
+        public new string? Telefono { get; set; }
 
         public ICollection<Pedido> Pedidos { get; set; } = new List<Pedido>();
     }

@@ -20,5 +20,8 @@ namespace MiRoti.Models
 
         [Required, MaxLength(50)]
         public required string Rol { get; set; }
+
+        [MaxLength(20)]
+        public string? Telefono { get; set; }
     }
 }

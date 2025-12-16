@@ -43,32 +43,14 @@ namespace MiRoti.ControllersApi
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetPedidos()
         {
-            var pedidos = await _context.Pedidos
+            var pedidosQuery = _context.Pedidos
                 .Include(p => p.Cliente)
                 .Include(p => p.Cadete)
                 .Include(p => p.Detalles)
                     .ThenInclude(d => d.Plato)
-                .Select(p => new PedidoDTO
-                {
-                    Id = p.Id,
-                    Cliente = p.Cliente.Nombre,
-                    Cadete = p.Cadete != null ? p.Cadete.Nombre : "Sin asignar",
-                    FechaHora = p.FechaHora,
-                    Estado = p.Estado,
-                    Total = p.Total,
-                    Detalles = p.Detalles.Select(d => new DetallePedidoDTO
-                    {
-                        Plato = d.Plato.Nombre,
-                        Cantidad = d.Cantidad,
-                        Subtotal = d.Subtotal
-                        ,
-                        ImagenUrl = d.Plato != null ? d.Plato.ImagenUrl ?? "" : ""
-                    }).ToList()
-                })
-                .OrderByDescending(p => p.FechaHora)
-                .ToListAsync();
+                .OrderByDescending(p => p.FechaHora);
 
-            return Ok(pedidos);
+            return Ok(await MapPedidos(pedidosQuery).ToListAsync());
         }
 
         // ===========================================================
@@ -112,28 +94,14 @@ namespace MiRoti.ControllersApi
                 await _context.SaveChangesAsync();
 
                 // 🔁 Devolver DTO del pedido recién creado
-                var pedidoResult = await _context.Pedidos
-                    .Include(p => p.Cliente)
-                    .Include(p => p.Detalles)
-                        .ThenInclude(d => d.Plato)
+                var pedidosQuery = _context.Pedidos
                     .Where(p => p.Id == pedido.Id)
-                    .Select(p => new PedidoDTO
-                    {
-                        Id = p.Id,
-                        Cliente = p.Cliente.Nombre,
-                        FechaHora = p.FechaHora,
-                        Estado = p.Estado,
-                        Total = p.Total,
-                        Detalles = p.Detalles.Select(d => new DetallePedidoDTO
-                        {
-                            Plato = d.Plato.Nombre,
-                            Cantidad = d.Cantidad,
-                            Subtotal = d.Subtotal
-                            ,
-                            ImagenUrl = d.Plato != null ? d.Plato.ImagenUrl ?? "" : ""
-                        }).ToList()
-                    })
-                    .FirstOrDefaultAsync();
+                    .Include(p => p.Cliente)
+                    .Include(p => p.Cadete)
+                    .Include(p => p.Detalles)
+                        .ThenInclude(d => d.Plato);
+
+                var pedidoResult = await MapPedidos(pedidosQuery).FirstOrDefaultAsync();
 
                 return CreatedAtAction(nameof(GetPedidoById), new { id = pedido.Id }, pedidoResult);
             }
@@ -149,27 +117,14 @@ namespace MiRoti.ControllersApi
         [HttpGet("{id}")]
         public async Task<IActionResult> GetPedidoById(int id)
         {
-            var pedido = await _context.Pedidos
+            var pedidoQuery = _context.Pedidos
+                .Where(p => p.Id == id)
                 .Include(p => p.Cliente)
                 .Include(p => p.Cadete)
                 .Include(p => p.Detalles)
-                    .ThenInclude(d => d.Plato)
-                .Select(p => new PedidoDTO
-                {
-                    Id = p.Id,
-                    Cliente = p.Cliente.Nombre,
-                    Cadete = p.Cadete != null ? p.Cadete.Nombre : "Sin asignar",
-                    FechaHora = p.FechaHora,
-                    Estado = p.Estado,
-                    Total = p.Total,
-                    Detalles = p.Detalles.Select(d => new DetallePedidoDTO
-                    {
-                        Plato = d.Plato.Nombre,
-                        Cantidad = d.Cantidad,
-                        Subtotal = d.Subtotal
-                    }).ToList()
-                })
-                .FirstOrDefaultAsync(p => p.Id == id);
+                    .ThenInclude(d => d.Plato);
+
+            var pedido = await MapPedidos(pedidoQuery).FirstOrDefaultAsync();
 
             if (pedido == null)
                 return NotFound();
@@ -188,29 +143,15 @@ namespace MiRoti.ControllersApi
             if (string.IsNullOrWhiteSpace(clienteIdStr) || !int.TryParse(clienteIdStr, out var clienteId))
                 return Unauthorized(new { success = false, error = "No se pudo obtener el identificador del cliente." });
 
-            var pedidos = await _context.Pedidos
+            var pedidosQuery = _context.Pedidos
                 .Where(p => p.ClienteId == clienteId)
+                .Include(p => p.Cliente)
+                .Include(p => p.Cadete)
                 .Include(p => p.Detalles)
                     .ThenInclude(d => d.Plato)
-                .OrderByDescending(p => p.FechaHora)
-                .Select(p => new PedidoDTO
-                {
-                    Id = p.Id,
-                    FechaHora = p.FechaHora,
-                    Estado = p.Estado,
-                    Total = p.Total,
-                    Detalles = p.Detalles.Select(d => new DetallePedidoDTO
-                    {
-                        Plato = d.Plato.Nombre,
-                        Cantidad = d.Cantidad,
-                        Subtotal = d.Subtotal
-                        ,
-                        ImagenUrl = d.Plato != null ? d.Plato.ImagenUrl ?? "" : ""
-                    }).ToList()
-                })
-                .ToListAsync();
+                .OrderByDescending(p => p.FechaHora);
 
-            return Ok(pedidos);
+            return Ok(await MapPedidos(pedidosQuery).ToListAsync());
         }
 
         // ===========================================================
@@ -227,6 +168,7 @@ namespace MiRoti.ControllersApi
             var pedidos = await _context.Pedidos
                 .Where(p => p.CadeteId == cadeteId && p.Estado != "Entregado")
                 .Include(p => p.Cliente)
+                .Include(p => p.Cadete)
                 .Include(p => p.Detalles)
                     .ThenInclude(d => d.Plato)
                 .OrderBy(p => p.FechaHora)
@@ -234,19 +176,84 @@ namespace MiRoti.ControllersApi
                 {
                     Id = p.Id,
                     Cliente = p.Cliente.Nombre,
+                    ClienteDireccion = p.Cliente.Direccion ?? string.Empty,
+                    ClienteTelefono = p.Cliente.Telefono ?? string.Empty,
+                    Cadete = p.Cadete != null ? p.Cadete.Nombre : "Sin cadete",
+                    CadeteTelefono = p.Cadete != null ? p.Cadete.Telefono : null,
+                    FechaHora = p.FechaHora,
                     Estado = p.Estado,
                     Total = p.Total,
-                    FechaHora = p.FechaHora,
                     Detalles = p.Detalles.Select(d => new DetallePedidoDTO
                     {
                         Plato = d.Plato.Nombre,
                         Cantidad = d.Cantidad,
-                        Subtotal = d.Subtotal
+                        Subtotal = d.Subtotal,
+                        ImagenUrl = d.Plato != null ? d.Plato.ImagenUrl ?? string.Empty : string.Empty
                     }).ToList()
                 })
                 .ToListAsync();
 
             return Ok(pedidos);
+        }
+
+        // ===========================================================
+        // ✅ GET: api/pedidos/disponibles (Cadete)
+        // ===========================================================
+        [HttpGet("disponibles")]
+        [Authorize(Roles = "Cadete")]
+        public async Task<IActionResult> GetPedidosDisponibles()
+        {
+            var pedidos = await _context.Pedidos
+                .Where(p => p.Estado == "Pendiente" && p.CadeteId == null)
+                .Include(p => p.Cliente)
+                .Include(p => p.Detalles)
+                    .ThenInclude(d => d.Plato)
+                .OrderBy(p => p.FechaHora)
+                .Select(p => new PedidoDTO
+                {
+                    Id = p.Id,
+                    Cliente = p.Cliente.Nombre,
+                    ClienteDireccion = p.Cliente.Direccion ?? string.Empty,
+                    ClienteTelefono = p.Cliente.Telefono ?? string.Empty,
+                    Cadete = "Sin cadete",
+                    CadeteTelefono = null,
+                    FechaHora = p.FechaHora,
+                    Estado = p.Estado,
+                    Total = p.Total,
+                    Detalles = p.Detalles.Select(d => new DetallePedidoDTO
+                    {
+                        Plato = d.Plato.Nombre,
+                        Cantidad = d.Cantidad,
+                        Subtotal = d.Subtotal,
+                        ImagenUrl = d.Plato != null ? d.Plato.ImagenUrl ?? string.Empty : string.Empty
+                    }).ToList()
+                })
+                .ToListAsync();
+
+            return Ok(pedidos);
+        }
+
+        private IQueryable<PedidoDTO> MapPedidos(IQueryable<Pedido> pedidos)
+        {
+            return pedidos.Select(p => new PedidoDTO
+            {
+                Id = p.Id,
+                Cliente = p.Cliente.Nombre,
+                ClienteDireccion = p.Cliente.Direccion ?? string.Empty,
+                ClienteTelefono = p.Cliente.Telefono ?? string.Empty,
+                Cadete = p.Cadete != null ? p.Cadete.Nombre : "Sin cadete",
+                CadeteTelefono = p.Cadete != null ? p.Cadete.Telefono : null,
+                FechaHora = p.FechaHora,
+                Estado = p.Estado,
+                Total = p.Total,
+                Detalles = p.Detalles.Select(d => new DetallePedidoDTO
+                {
+                    Plato = d.Plato.Nombre,
+                    Cantidad = d.Cantidad,
+                    Subtotal = d.Subtotal,
+                    ImagenUrl = d.Plato != null ? d.Plato.ImagenUrl ?? string.Empty : string.Empty
+                }).ToList()
+            });
         }
 
         // ===========================================================

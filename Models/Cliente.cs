@@ -11,7 +11,7 @@ namespace MiRoti.Models
         public required string Direccion { get; set; }
 
         [Required, MaxLength(20)]
-        public required string Telefono { get; set; }
+        public new required string Telefono { get; set; }
 
         public ICollection<Pedido> Pedidos { get; set; } = new List<Pedido>();
     }

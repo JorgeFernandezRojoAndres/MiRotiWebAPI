@@ -37,7 +37,10 @@ namespace MiRoti.DTOs
     {
         public int Id { get; set; }
         public string Cliente { get; set; } = string.Empty;
+        public string ClienteDireccion { get; set; } = string.Empty;
+        public string ClienteTelefono { get; set; } = string.Empty;
         public string Cadete { get; set; } = string.Empty;
+        public string? CadeteTelefono { get; set; }
         public DateTime FechaHora { get; set; }
         public string Estado { get; set; } = string.Empty;
         public decimal Total { get; set; }

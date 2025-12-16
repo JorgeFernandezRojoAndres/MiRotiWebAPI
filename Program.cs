@@ -50,6 +50,7 @@ namespace MiRoti
                 options.ModelBinderProviders.Insert(0, new MiRoti.ModelBinders.InvariantDecimalModelBinderProvider());
             });
             builder.Services.AddRazorPages();
+            builder.Services.AddDistributedMemoryCache();
             builder.Services.AddSession();
 
             // ----------------------------
